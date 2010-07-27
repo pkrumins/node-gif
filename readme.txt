@@ -104,6 +104,8 @@ get node-gif installed via npm, run:
 
 This will take care of everything and you don't need to worry about NODE_PATH.
 
+[1]: http://sourceforge.net/projects/giflib/
+
 
 Wondering about PNG or JPEG?
 ----------------------------
