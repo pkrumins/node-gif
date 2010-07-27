@@ -1,0 +1,42 @@
+{
+   "name": "gif",
+   "version": "1.0.0",
+   "main": "gif",
+   "description": "A C++ module for node-js that converts RGB and RGBA buffers to a GIF images (in memory).",
+   "keywords": [
+       "gif",
+       "rgba",
+       "rgb",
+       "image",
+       "picture"
+   ],
+   "maintainers": [
+       {
+           "name": "Peteris Krumins",
+           "email": "peteris.krumins@gmail.com",
+           "web": "http://www.catonmat.net",
+           "twitter": "pkrumins"
+       } 
+   ],
+   "licenses": [
+       {
+           "type": "MIT"
+       } 
+   ],
+   "repositories": [
+       {
+           "type": "git",
+           "url": "http://github.com/pkrumins/node-gif.git" 
+       } 
+   ],
+   "directories": {
+       "tests": "tests"
+   },
+   "engines": {
+       "node": ">=0.1.93"
+   },
+   "scripts": {
+       "install": "node-waf configure build"
+   }
+}
+
