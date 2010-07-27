@@ -3,8 +3,8 @@
 #include <string.h>
 #include "gif_encoder.h"
 
-Gif::Gif() : size(0), mem_size(0), gif(NULL) {}
-Gif::~Gif() { free(gif); }
+GifImage::GifImage() : size(0), mem_size(0), gif(NULL) {}
+GifImage::~GifImage() { free(gif); }
 
 GifEncoder::GifEncoder(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
     data(ddata), width(wwidth), height(hheight), buf_type(bbuf_type) {}
@@ -12,7 +12,7 @@ GifEncoder::GifEncoder(unsigned char *ddata, int wwidth, int hheight, buffer_typ
 int
 GifEncoder::gif_writer(GifFileType *gif_file, const GifByteType *data, int size)
 {
-    Gif *gif = (Gif *)gif_file->UserData;
+    GifImage *gif = (GifImage *)gif_file->UserData;
     if (gif->mem_size < gif->size + size) {
         GifByteType *new_ptr = (GifByteType *)realloc(gif->gif, gif->size + size + 10*1024);
         if (!new_ptr) {
@@ -47,8 +47,8 @@ GifEncoder::encode()
         }
     }
     
-    int color_map_size = 255;
-    ColorMapObject *output_color_map = MakeMapObject(255, NULL);
+    int color_map_size = 256;
+    ColorMapObject *output_color_map = MakeMapObject(256, NULL);
     if (!output_color_map) {
         free(rgb_mem);
         throw "MakeMapObject in GifEncoder::encode failed";

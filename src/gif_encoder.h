@@ -5,20 +5,20 @@
 
 #include "common.h"
 
-struct Gif {
+struct GifImage {
     int size;
     int mem_size;
     unsigned char *gif;
 
-    Gif();
-    ~Gif();
+    GifImage();
+    ~GifImage();
 };
 
 class GifEncoder {
     unsigned char *data;
     int width, height;
     buffer_type buf_type;
-    Gif gif;
+    GifImage gif;
 
     static int gif_writer(GifFileType *gif_file, const GifByteType *data, int size);
 public:
