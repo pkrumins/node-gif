@@ -39,11 +39,44 @@ GifEncoder::encode()
     GifByteType *blue_buf = rgb_mem + width*height*2;
 
     GifByteType *datap = data, *rp = red_buf, *gp = green_buf, *bp = blue_buf;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            *rp++ = *datap++;
-            *gp++ = *datap++;
-            *bp++ = *datap++;
+
+    if (buf_type == BUF_RGB) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                *rp++ = *datap++;
+                *gp++ = *datap++;
+                *bp++ = *datap++;
+            }
+        }
+    }
+    else if (buf_type == BUF_BGR) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                *rp++ = *(datap+2);
+                *gp++ = *(datap+1);
+                *bp++ = *datap;
+                datap += 3;
+            }
+        }
+    }
+    else if (buf_type == BUF_RGBA) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                *rp++ = *datap++;
+                *gp++ = *datap++;
+                *bp++ = *datap++;
+                datap++;
+            }
+        }
+    }
+    else if (buf_type == BUF_BGRA) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                *rp++ = *(datap+2);
+                *gp++ = *(datap+1);
+                *bp++ = *datap;
+                datap += 4;
+            }
         }
     }
     
