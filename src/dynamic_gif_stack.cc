@@ -93,23 +93,25 @@ DynamicGifStack::GifEncode()
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
-                for (int j = 0; j < 3*gif->w; j+=3) {
+                unsigned char *datap = &data[start + i*width*3];
+                unsigned char *gifdatap = &gif->data[i*gif->w*3];
+                for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
-                        if (gif->data[i*gif->w*3 + j] == transparency_color.r &&
-                            gif->data[i*gif->w*3 + j + 1] == transparency_color.g &&
-                            gif->data[i*gif->w*3 + j + 2] == transparency_color.b)
+                        if (gifdatap[0] == transparency_color.r &&
+                            gifdatap[1] == transparency_color.g &&
+                            gifdatap[2] == transparency_color.b)
                         {
-                            if (gif->data[i*gif->w*3 + j + 2] < 0xFF) {
-                                gif->data[i*gif->w*3 + j + 2]++;
+                            if (gifdatap[2] < 0xFF) {
+                                gifdatap[2]++;
                             }
                             else {
-                                gif->data[i*gif->w*3 + j + 2]--;
+                                gifdatap[2]--;
                             }
                         }
                     }
-                    data[start + i*width*3 + j] = gif->data[i*gif->w*3 + j];
-                    data[start + i*width*3 + j + 1] = gif->data[i*gif->w*3 + j + 1];
-                    data[start + i*width*3 + j + 2] = gif->data[i*gif->w*3 + j + 2];
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
                 }
             }
         }
@@ -119,23 +121,25 @@ DynamicGifStack::GifEncode()
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
-                for (int j = 0; j < 3*gif->w; j+=3) {
+                unsigned char *datap = &data[start + i*width*3];
+                unsigned char *gifdatap = &gif->data[i*gif->w*3];
+                for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
-                        if (gif->data[i*gif->w*3 + j + 2] == transparency_color.r &&
-                            gif->data[i*gif->w*3 + j + 1] == transparency_color.g &&
-                            gif->data[i*gif->w*3 + j] == transparency_color.b)
+                        if (gifdatap[2] == transparency_color.r &&
+                            gifdatap[1] == transparency_color.g &&
+                            gifdatap[0] == transparency_color.b)
                         {
-                            if (gif->data[i*gif->w*3 + j] < 0xFF) {
-                                gif->data[i*gif->w*3 + j]++;
+                            if (gifdatap[0] < 0xFF) {
+                                gifdatap[0]++;
                             }
                             else {
-                                gif->data[i*gif->w*3 + j]--;
+                                gifdatap[0]--;
                             }
                         }
                     }
-                    data[start + i*width*3 + j] = gif->data[i*gif->w*3 + j + 2];
-                    data[start + i*width*3 + j + 1] = gif->data[i*gif->w*3 + j + 1];
-                    data[start + i*width*3 + j + 2] = gif->data[i*gif->w*3 + j];
+                    *datap++ = *(gifdatap++ + 2);
+                    *datap++ = *(gifdatap++ + 1);
+                    *datap++ = *gifdatap++;
                 }
             }
         }
@@ -145,23 +149,26 @@ DynamicGifStack::GifEncode()
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
-                for (int j = 0, k = 0; j < 3*gif->w; j+=3, k+=4) {
+                unsigned char *datap = &data[start + i*width*3];
+                unsigned char *gifdatap = &gif->data[i*gif->w*4];
+                for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
-                        if (gif->data[i*gif->w*4 + k] == transparency_color.r &&
-                            gif->data[i*gif->w*4 + k + 1] == transparency_color.g &&
-                            gif->data[i*gif->w*4 + k + 2] == transparency_color.b)
+                        if (gifdatap[0] == transparency_color.r &&
+                            gifdatap[1] == transparency_color.g &&
+                            gifdatap[2] == transparency_color.b)
                         {
-                            if (gif->data[i*gif->w*4 + k + 2] < 0xFF) {
-                                gif->data[i*gif->w*4 + k + 2]++;
+                            if (gifdatap[2] < 0xFF) {
+                                gifdatap[2]++;
                             }
                             else {
-                                gif->data[i*gif->w*3 + k + 2]--;
+                                gifdatap[2]--;
                             }
                         }
                     }
-                    data[start + i*width*3 + j] = gif->data[i*gif->w*4 + k];
-                    data[start + i*width*3 + j + 1] = gif->data[i*gif->w*4 + k + 1];
-                    data[start + i*width*3 + j + 2] = gif->data[i*gif->w*4 + k + 2];
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
+                    gifdatap++;
                 }
             }
         }
@@ -171,23 +178,26 @@ DynamicGifStack::GifEncode()
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
-                for (int j = 0, k = 0; j < 3*gif->w; j+=3, k+=4) {
+                unsigned char *datap = &data[start + i*width*3];
+                unsigned char *gifdatap = &gif->data[i*gif->w*4];
+                for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
-                        if (gif->data[i*gif->w*4 + k + 2] == transparency_color.r &&
-                            gif->data[i*gif->w*4 + k + 1] == transparency_color.g &&
-                            gif->data[i*gif->w*4 + k] == transparency_color.b)
+                        if (gifdatap[2] == transparency_color.r &&
+                            gifdatap[1] == transparency_color.g &&
+                            gifdatap[0] == transparency_color.b)
                         {
-                            if (gif->data[i*gif->w*4 + k] < 0xFF) {
-                                gif->data[i*gif->w*4 + k]++;
+                            if (gifdatap[0] < 0xFF) {
+                                gifdatap[0]++;
                             }
                             else {
-                                gif->data[i*gif->w*3 + k]--;
+                                gifdatap[0]--;
                             }
                         }
                     }
-                    data[start + i*width*3 + j] = gif->data[i*gif->w*4 + k + 2];
-                    data[start + i*width*3 + j + 1] = gif->data[i*gif->w*4 + k + 1];
-                    data[start + i*width*3 + j + 2] = gif->data[i*gif->w*4 + k];
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
+                    *datap++ = *gifdatap++;
+                    gifdatap++;
                 }
             }
         }
