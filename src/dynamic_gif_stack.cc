@@ -194,8 +194,8 @@ DynamicGifStack::GifEncode()
                             }
                         }
                     }
-                    *datap++ = *gifdatap++;
-                    *datap++ = *gifdatap++;
+                    *datap++ = *(gifdatap++ + 2);
+                    *datap++ = *(gifdatap++ + 1);
                     *datap++ = *gifdatap++;
                     gifdatap++;
                 }
