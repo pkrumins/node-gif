@@ -24,10 +24,16 @@ The third argument is integer height of the image.
 The fourth argument is the quality of output image.
 The fifth argument is buffer type, 'rgb', 'bgr', 'rgba' or 'bgra'.
 
+You can set the transparent color for the image by using:
+
+    gif.setTransparencyColor(red, green, blue);
+
 Once you have constructed Gif object, call `encode` method to encode and
 produce GIF image.
 
     var image = gif.encode();
+
+
 
 See `tests/gif.js` for a concrete example.
 
@@ -44,7 +50,7 @@ dynamically computed. To create it, do:
 The `buffer_type` again is 'rgb', 'bgr', 'rgba' or 'bgra', depending on what type
 of buffers you're gonna push to `dynamic_gif`.
 
-It provides three methods - `push`, `encode` and `dimensions`.
+It provides several methods - `push`, `encode`, `dimensions`, `setTransparencyColor`.
 
 The `push` method pushes the buffer to position `x`, `y` with `width`, `height`.
 

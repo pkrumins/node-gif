@@ -4,6 +4,7 @@ var sys = require('sys');
 var Buffer = require('buffer').Buffer;
 
 var gifStack = new GifLib.DynamicGifStack('rgba');
+//gifStack.setTransparencyColor(0x00, 0x00, 0x00);
 
 function rectDim(fileName) {
     var m = fileName.match(/^\d+-rgba-(\d+)-(\d+)-(\d+)-(\d+).dat$/);

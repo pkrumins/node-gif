@@ -35,6 +35,7 @@ class DynamicGifStack : public node::ObjectWrap {
     Point offset;
     int width, height;
     buffer_type buf_type;
+    Color transparency_color;
 
     std::pair<Point, Point> OptimalDimension();
 
@@ -46,11 +47,13 @@ public:
     v8::Handle<v8::Value> Push(node::Buffer *buf, int x, int y, int w, int h);
     v8::Handle<v8::Value> Dimensions();
     v8::Handle<v8::Value> GifEncode();
+    void SetTransparencyColor(unsigned char r, unsigned char g, unsigned char b);
 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
     static v8::Handle<v8::Value> Dimensions(const v8::Arguments &args);
     static v8::Handle<v8::Value> GifEncode(const v8::Arguments &args);
+    static v8::Handle<v8::Value> SetTransparencyColor(const v8::Arguments &args);
 };
 
 #endif

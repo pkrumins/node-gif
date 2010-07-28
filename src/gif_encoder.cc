@@ -122,14 +122,27 @@ GifEncoder::encode()
         throw "EGifPutScreenDesc in GifEncoder::encode failed";
     }
 
-    /*
-    char moo[] = {
-        1,    // enable transparency
-        0, 0, // no time delay,
-        0xFF  // transparency color index
-    };
-    EGifPutExtension(gif_file, GRAPHICS_EXT_FUNC_CODE, 4, moo);
-    */
+    if (transparent_color.color_present) {
+        // find color's index in color map
+        for (int i = 0; i < color_map_size; i++) {
+            /*
+            printf("%d: %02x %02x %02x\n", i, output_color_map->Colors[i].Red,
+                output_color_map->Colors[i].Green, output_color_map->Colors[i].Blue);
+            */
+            if (output_color_map->Colors[i].Red == transparent_color.r &&
+                output_color_map->Colors[i].Green == transparent_color.g &&
+                output_color_map->Colors[i].Blue == transparent_color.b)
+            {
+                char extension[] = {
+                    1, // enable transparency
+                    0, 0, // no time delay
+                    i // transparency color index
+                };
+                EGifPutExtension(gif_file, GRAPHICS_EXT_FUNC_CODE, 4, extension);
+                break;
+            }
+        }
+    }
 
     if (EGifPutImageDesc(gif_file, 0, 0, width, height, FALSE, NULL)
         == GIF_ERROR)
@@ -156,11 +169,27 @@ GifEncoder::encode()
     EGifCloseFile(gif_file);
 }
 
+void
+GifEncoder::set_transparency_color(unsigned char r, unsigned char g, unsigned char b)
+{
+    transparent_color.r = r;
+    transparent_color.r = g;
+    transparent_color.r = b;
+    transparent_color.color_present = true;
+}
+
+void
+GifEncoder::set_transparency_color(const Color &c)
+{
+    transparent_color = c;
+}
+
 const unsigned char *
 GifEncoder::get_gif() const
 {
     return gif.gif;
 }
+
 const int
 GifEncoder::get_gif_len() const
 {

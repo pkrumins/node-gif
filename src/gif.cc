@@ -13,6 +13,7 @@ Gif::Initialize(Handle<Object> target)
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncode);
+    NODE_SET_PROTOTYPE_METHOD(t, "setTransparencyColor", SetTransparencyColor);
     target->Set(String::NewSymbol("Gif"), t->GetFunction());
 }
 
@@ -28,6 +29,9 @@ Gif::GifEncode()
         GifEncoder encoder(
             (unsigned char *)data->data(), width, height, buf_type
         );
+        if (transparency_color.color_present) {
+            encoder.set_transparency_color(transparency_color);
+        }
         encoder.encode();
         return scope.Close(
             Encode((char *)encoder.get_gif(), encoder.get_gif_len(), BINARY)
@@ -36,6 +40,12 @@ Gif::GifEncode()
     catch (const char *err) {
         return VException(err);
     }
+}
+
+void
+Gif::SetTransparencyColor(unsigned char r, unsigned char g, unsigned char b)
+{
+    transparency_color = Color(r, g, b, true);
 }
 
 Handle<Value>
@@ -94,7 +104,33 @@ Handle<Value>
 Gif::GifEncode(const Arguments &args)
 {
     HandleScope scope;
+
     Gif *gif = ObjectWrap::Unwrap<Gif>(args.This());
     return gif->GifEncode();
+}
+
+Handle<Value>
+Gif::SetTransparencyColor(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 3)
+        return VException("Three arguments required - r, g, b");
+
+    if (!args[0]->IsInt32())
+        return VException("First argument must be integer red.");
+    if (!args[1]->IsInt32())
+        return VException("Second argument must be integer green.");
+    if (!args[2]->IsInt32())
+        return VException("Third argument must be integer blue.");
+    
+    unsigned char r = args[0]->Int32Value();
+    unsigned char g = args[1]->Int32Value();
+    unsigned char b = args[2]->Int32Value();
+
+    Gif *gif = ObjectWrap::Unwrap<Gif>(args.This());
+    gif->SetTransparencyColor(r, g, b);
+
+    return Undefined();
 }
 

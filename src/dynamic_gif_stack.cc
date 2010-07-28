@@ -1,3 +1,4 @@
+#include "common.h"
 #include "gif_encoder.h"
 #include "dynamic_gif_stack.h"
 
@@ -33,6 +34,7 @@ DynamicGifStack::Initialize(Handle<Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncode);
     NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
+    NODE_SET_PROTOTYPE_METHOD(t, "setTransparencyColor", SetTransparencyColor);
     target->Set(String::NewSymbol("DynamicGifStack"), t->GetFunction());
 }
 
@@ -73,7 +75,20 @@ DynamicGifStack::GifEncode()
 
     unsigned char *data = (unsigned char*)malloc(sizeof(*data)*width*height*3);
     if (!data) return VException("malloc failed in DynamicGifStack::GifEncode");
-    memset(data, 0xFF, width*height*3);
+
+    GifEncoder gif_encoder(data, width, height, BUF_RGB);
+    bool user_set_transparency = true;
+    if (!transparency_color.color_present) {
+        user_set_transparency = false;
+        transparency_color = Color(0xD8, 0xA8, 0x10);
+        gif_encoder.set_transparency_color(transparency_color);
+    }
+    unsigned char *datap = data;
+    for (int i = 0; i < width*height*3; i+=3) {
+        *datap++ = transparency_color.r;
+        *datap++ = transparency_color.g;
+        *datap++ = transparency_color.b;
+    }
 
     if (buf_type == BUF_RGB) {
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
@@ -81,6 +96,19 @@ DynamicGifStack::GifEncode()
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
                 for (int j = 0; j < 3*gif->w; j+=3) {
+                    if (!user_set_transparency) {
+                        if (gif->data[i*gif->w*3 + j] == transparency_color.r &&
+                            gif->data[i*gif->w*3 + j + 1] == transparency_color.g &&
+                            gif->data[i*gif->w*3 + j + 2] == transparency_color.b)
+                        {
+                            if (gif->data[i*gif->w*3 + j + 2] < 0xFF) {
+                                gif->data[i*gif->w*3 + j + 2]++;
+                            }
+                            else {
+                                gif->data[i*gif->w*3 + j + 2]--;
+                            }
+                        }
+                    }
                     data[start + i*width*3 + j] = gif->data[i*gif->w*3 + j];
                     data[start + i*width*3 + j + 1] = gif->data[i*gif->w*3 + j + 1];
                     data[start + i*width*3 + j + 2] = gif->data[i*gif->w*3 + j + 2];
@@ -94,6 +122,19 @@ DynamicGifStack::GifEncode()
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
                 for (int j = 0; j < 3*gif->w; j+=3) {
+                    if (!user_set_transparency) {
+                        if (gif->data[i*gif->w*3 + j + 2] == transparency_color.r &&
+                            gif->data[i*gif->w*3 + j + 1] == transparency_color.g &&
+                            gif->data[i*gif->w*3 + j] == transparency_color.b)
+                        {
+                            if (gif->data[i*gif->w*3 + j] < 0xFF) {
+                                gif->data[i*gif->w*3 + j]++;
+                            }
+                            else {
+                                gif->data[i*gif->w*3 + j]--;
+                            }
+                        }
+                    }
                     data[start + i*width*3 + j] = gif->data[i*gif->w*3 + j + 2];
                     data[start + i*width*3 + j + 1] = gif->data[i*gif->w*3 + j + 1];
                     data[start + i*width*3 + j + 2] = gif->data[i*gif->w*3 + j];
@@ -107,6 +148,19 @@ DynamicGifStack::GifEncode()
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
                 for (int j = 0, k = 0; j < 3*gif->w; j+=3, k+=4) {
+                    if (!user_set_transparency) {
+                        if (gif->data[i*gif->w*4 + k] == transparency_color.r &&
+                            gif->data[i*gif->w*4 + k + 1] == transparency_color.g &&
+                            gif->data[i*gif->w*4 + k + 2] == transparency_color.b)
+                        {
+                            if (gif->data[i*gif->w*4 + k + 2] < 0xFF) {
+                                gif->data[i*gif->w*4 + k + 2]++;
+                            }
+                            else {
+                                gif->data[i*gif->w*3 + k + 2]--;
+                            }
+                        }
+                    }
                     data[start + i*width*3 + j] = gif->data[i*gif->w*4 + k];
                     data[start + i*width*3 + j + 1] = gif->data[i*gif->w*4 + k + 1];
                     data[start + i*width*3 + j + 2] = gif->data[i*gif->w*4 + k + 2];
@@ -120,6 +174,19 @@ DynamicGifStack::GifEncode()
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
             for (int i = 0; i < gif->h; i++) {
                 for (int j = 0, k = 0; j < 3*gif->w; j+=3, k+=4) {
+                    if (!user_set_transparency) {
+                        if (gif->data[i*gif->w*4 + k + 2] == transparency_color.r &&
+                            gif->data[i*gif->w*4 + k + 1] == transparency_color.g &&
+                            gif->data[i*gif->w*4 + k] == transparency_color.b)
+                        {
+                            if (gif->data[i*gif->w*4 + k] < 0xFF) {
+                                gif->data[i*gif->w*4 + k]++;
+                            }
+                            else {
+                                gif->data[i*gif->w*3 + k]--;
+                            }
+                        }
+                    }
                     data[start + i*width*3 + j] = gif->data[i*gif->w*4 + k + 2];
                     data[start + i*width*3 + j + 1] = gif->data[i*gif->w*4 + k + 1];
                     data[start + i*width*3 + j + 2] = gif->data[i*gif->w*4 + k];
@@ -130,6 +197,9 @@ DynamicGifStack::GifEncode()
 
     try {
         GifEncoder gif_encoder(data, width, height, BUF_RGB);
+        if (transparency_color.color_present) {
+            gif_encoder.set_transparency_color(transparency_color);
+        }
         gif_encoder.encode();
         free(data);
         return scope.Close(
@@ -139,6 +209,12 @@ DynamicGifStack::GifEncode()
     catch (const char *err) {
         return VException(err);
     }
+}
+
+void
+DynamicGifStack::SetTransparencyColor(unsigned char r, unsigned char g, unsigned char b)
+{
+    transparency_color = Color(r, g, b, true);
 }
 
 Handle<Value>
@@ -240,5 +316,30 @@ DynamicGifStack::GifEncode(const Arguments &args)
 
     DynamicGifStack *gif_stack = ObjectWrap::Unwrap<DynamicGifStack>(args.This());
     return scope.Close(gif_stack->GifEncode());
+}
+
+Handle<Value>
+DynamicGifStack::SetTransparencyColor(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 3)
+        return VException("Three arguments required - r, g, b");
+
+    if (!args[0]->IsInt32())
+        return VException("First argument must be integer red.");
+    if (!args[1]->IsInt32())
+        return VException("Second argument must be integer green.");
+    if (!args[2]->IsInt32())
+        return VException("Third argument must be integer blue.");
+    
+    unsigned char r = args[0]->Int32Value();
+    unsigned char g = args[1]->Int32Value();
+    unsigned char b = args[2]->Int32Value();
+
+    DynamicGifStack *gif = ObjectWrap::Unwrap<DynamicGifStack>(args.This());
+    gif->SetTransparencyColor(r, g, b);
+
+    return Undefined();
 }
 

@@ -19,6 +19,14 @@ struct Rect {
     bool isNull() { return x == 0 && y == 0 && w == 0 && h == 0; }
 };
 
+struct Color {
+    bool color_present; // true if this is really a color
+    unsigned char r, g, b;
+    Color(unsigned char rr, unsigned char gg, unsigned char bb, bool ccolor_present=true) :
+        r(rr), g(gg), b(bb), color_present(ccolor_present) {}
+    Color() : color_present(false) {}
+};
+
 bool str_eq(const char *s1, const char *s2);
 unsigned char *rgba_to_rgb(const unsigned char *rgba, int rgba_size);
 unsigned char *bgra_to_rgb(const unsigned char *rgba, int bgra_size);
