@@ -76,12 +76,10 @@ DynamicGifStack::GifEncode()
     unsigned char *data = (unsigned char*)malloc(sizeof(*data)*width*height*3);
     if (!data) return VException("malloc failed in DynamicGifStack::GifEncode");
 
-    GifEncoder gif_encoder(data, width, height, BUF_RGB);
     bool user_set_transparency = true;
     if (!transparency_color.color_present) {
         user_set_transparency = false;
         transparency_color = Color(0xD8, 0xA8, 0x10);
-        gif_encoder.set_transparency_color(transparency_color);
     }
     unsigned char *datap = data;
     for (int i = 0; i < width*height*3; i+=3) {
