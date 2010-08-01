@@ -17,7 +17,7 @@ def configure(conf):
 def build(bld):
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
   obj.target = "gif"
-  obj.source = "src/common.cc src/gif_encoder.cc src/gif.cc src/dynamic_gif_stack.cc src/animated_gif.cc src/module.cc"
+  obj.source = "src/common.cpp src/gif_encoder.cpp src/gif.cpp src/dynamic_gif_stack.cpp src/animated_gif.cpp src/module.cpp"
   obj.uselib = "GIF"
 
 def shutdown():
