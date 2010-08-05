@@ -88,13 +88,14 @@ DynamicGifStack::GifEncode()
         *datap++ = transparency_color.b;
     }
 
-    if (buf_type == BUF_RGB) {
+    switch (buf_type) {
+    case BUF_RGB:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
+            unsigned char *gifdatap = gif->data;
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
-                unsigned char *gifdatap = &gif->data[i*gif->w*3];
                 for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
                         if (gifdatap[0] == transparency_color.r &&
@@ -115,14 +116,15 @@ DynamicGifStack::GifEncode()
                 }
             }
         }
-    }
-    else if (buf_type == BUF_BGR) {
+        break;
+
+    case BUF_BGR:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
+            unsigned char *gifdatap = gif->data;
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
-                unsigned char *gifdatap = &gif->data[i*gif->w*3];
                 for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
                         if (gifdatap[2] == transparency_color.r &&
@@ -143,14 +145,15 @@ DynamicGifStack::GifEncode()
                 }
             }
         }
-    }
-    else if (buf_type == BUF_RGBA) {
+        break;
+
+    case BUF_RGBA:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
+            unsigned char *gifdatap = gif->data;
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
-                unsigned char *gifdatap = &gif->data[i*gif->w*4];
                 for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
                         if (gifdatap[0] == transparency_color.r &&
@@ -172,14 +175,15 @@ DynamicGifStack::GifEncode()
                 }
             }
         }
-    }
-    else if (buf_type == BUF_BGRA) {
+        break;
+
+    case BUF_BGRA:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
             int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
+            unsigned char *gifdatap = gif->data;
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
-                unsigned char *gifdatap = &gif->data[i*gif->w*4];
                 for (int j = 0; j < gif->w; j++) {
                     if (!user_set_transparency) {
                         if (gifdatap[2] == transparency_color.r &&
@@ -201,6 +205,10 @@ DynamicGifStack::GifEncode()
                 }
             }
         }
+        break;
+
+    default:
+        throw "Unexpected buf_type in DynamicGifStack::GifEncode";
     }
 
     try {
