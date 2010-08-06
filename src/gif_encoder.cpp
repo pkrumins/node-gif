@@ -85,9 +85,10 @@ RGBator::bgr_to_rgb(unsigned char *data, int width, int height)
     GifByteType *rp = red, *gp = green, *bp = blue;
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
-            *rp++ = *(datap++ + 2);
-            *gp++ = *(datap++ + 1);
-            *bp++ = *datap++;
+            *rp++ = *(datap + 2);
+            *gp++ = *(datap + 1);
+            *bp++ = *datap;
+            datap += 3;
         }
     }
 }
@@ -114,10 +115,10 @@ RGBator::bgra_to_rgb(unsigned char *data, int width, int height)
     GifByteType *rp = red, *gp = green, *bp = blue;
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
-            *rp++ = *(datap++ + 2);
-            *gp++ = *(datap++ + 1);
-            *bp++ = *datap++;
-            datap++;
+            *rp++ = *(datap + 2);
+            *gp++ = *(datap + 1);
+            *bp++ = *datap;
+            datap += 4;
         }
     }
 }
@@ -334,7 +335,7 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 
     char extension[] = {
         frame_flags,
-        0, 0,
+        delay%256, delay/256,
         transp_color_idx
     };
     EGifPutExtension(gif_file, GRAPHICS_EXT_FUNC_CODE, 4, extension);

@@ -22,7 +22,7 @@ AnimatedGif::Initialize(Handle<Object> target)
 
 AnimatedGif::AnimatedGif(int wwidth, int hheight, buffer_type bbuf_type) :
     width(wwidth), height(hheight), buf_type(bbuf_type),
-    gif_encoder(wwidth, hheight, bbuf_type), transparency_color(0xFF, 0xFF, 0xFE),
+    gif_encoder(wwidth, hheight, BUF_RGB), transparency_color(0xFF, 0xFF, 0xFE),
     data(NULL)
 {
     gif_encoder.set_transparency_color(transparency_color);
@@ -46,13 +46,29 @@ AnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
     int start = y*width*3 + x*3;
 
     unsigned char *data_bufp = data_buf;
-    for (int i = 0; i < h; i++) {
-        unsigned char *datap = &data[start + i*width*3];
-        for (int j = 0; j < w; j++) {
-            *datap++ = *data_bufp++;
-            *datap++ = *data_bufp++;
-            *datap++ = *data_bufp++;
+
+    switch (buf_type) {
+    case BUF_RGB:
+        for (int i = 0; i < h; i++) {
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *data_bufp++;
+                *datap++ = *data_bufp++;
+                *datap++ = *data_bufp++;
+            }
         }
+        break;
+    case BUF_BGR:
+        for (int i = 0; i < h; i++) {
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *(data_bufp + 2);
+                *datap++ = *(data_bufp + 1);
+                *datap++ = *data_bufp;
+                data_bufp += 3;
+            }
+        }
+        break;
     }
 }
 
@@ -81,7 +97,7 @@ AnimatedGif::New(const Arguments &args)
         if (!args[2]->IsString())
             return VException("Third argument must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
-        String::AsciiValue bts(args[3]->ToString());
+        String::AsciiValue bts(args[2]->ToString());
         if (!(str_eq(*bts, "rgb") || str_eq(*bts, "bgr") ||
             str_eq(*bts, "rgba") || str_eq(*bts, "bgra")))
         {

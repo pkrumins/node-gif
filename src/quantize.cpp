@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cassert>
 #include <map>
+
+#include "common.h"
 #include "quantize.h"
 #include "palette.h"
 
