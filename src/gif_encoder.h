@@ -45,7 +45,6 @@ class AnimatedGifEncoder {
 
     bool headers_set;
     Color transparency_color;
-    int transparency_color_idx;
 
     void end_encoding();
 public:

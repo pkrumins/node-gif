@@ -5,7 +5,8 @@ var sys = require('sys');
 
 var chunkDirs = fs.readdirSync('.').sort().filter(
     function (f) {
-        return /^\d+$/.test(f);
+        //return /^\d+$/.test(f) && parseInt(f,10)<=2
+        return /^\d+$/.test(f)
     }
 );
 
@@ -24,6 +25,7 @@ function rectDim(fileName) {
 var animatedGif = new GifLib.AnimatedGif(720,400);
 
 chunkDirs.forEach(function (dir) {
+    console.log(dir);
     var chunkFiles = fs.readdirSync(dir).sort().filter(
         function (f) {
             return /^\d+-rgb-\d+-\d+-\d+-\d+.dat/.test(f);

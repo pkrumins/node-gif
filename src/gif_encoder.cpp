@@ -4,11 +4,13 @@
 #include <cstring>
 
 #include "gif_encoder.h"
+#include "palette.h"
+#include "quantize.h"
 
 static int
 find_color_index(ColorMapObject *color_map, int color_map_size, Color &color)
 {
-    for (int i = 0; i < color_map_size; i++) {
+    for (int i = 255; i >= 0; i--) { // cause our transparent color for now is at 255!
         /*
         printf("%d: %02x %02x %02x\n", i, color_map->Colors[i].Red,
             color_map->Colors[i].Green, color_map->Colors[i].Blue);
@@ -56,7 +58,7 @@ RGBator::RGBator(unsigned char *data, int width, int height, buffer_type buf_typ
         bgra_to_rgb(data, width, height);
         break;
     default:
-        throw "Unknown buf_type in RGBator::RGBator";
+        throw "Unexpected buf_type in RGBator::RGBator";
     }
 };
 
@@ -125,13 +127,13 @@ gif_writer(GifFileType *gif_file, const GifByteType *data, int size)
 {
     GifImage *gif = (GifImage *)gif_file->UserData;
     if (gif->mem_size < gif->size + size) {
-        GifByteType *new_ptr = (GifByteType *)realloc(gif->gif, gif->size + size + 10*1024);
+        GifByteType *new_ptr = (GifByteType *)realloc(gif->gif, gif->size + size + 1000*1024);
         if (!new_ptr) {
             free(gif->gif);
             throw "realloc in gif_writer failed";
         }
         gif->gif = new_ptr;
-        gif->mem_size += size + 10*1024;
+        gif->mem_size += size + 1000*1024;
     }
     memcpy(gif->gif + gif->size, data, size);
     gif->size += size;
@@ -144,7 +146,7 @@ GifEncoder::encode()
     RGBator rgb(data, width, height, buf_type);
 
     int color_map_size = 256;
-    ColorMapObject *output_color_map = MakeMapObject(256, NULL);
+    ColorMapObject *output_color_map = MakeMapObject(256, ext_web_safe_palette);
     if (!output_color_map) {
         throw "MakeMapObject in GifEncoder::encode failed";
     }
@@ -155,6 +157,14 @@ GifEncoder::encode()
         throw "malloc in GifEncoder::encode failed";
     }
 
+    if (web_safe_quantize(width, height, rgb.red, rgb.green, rgb.blue, gif_buf) == GIF_ERROR)
+    {
+        FreeMapObject(output_color_map);
+        free(gif_buf);
+        throw "web_safe_quantize in GifEncoder::encode failed";
+    }
+
+    /*
     if (QuantizeBuffer(width, height, &color_map_size,
         rgb.red, rgb.green, rgb.blue,
         gif_buf, output_color_map->Colors) == GIF_ERROR)
@@ -163,6 +173,7 @@ GifEncoder::encode()
         free(gif_buf);
         throw "QuantizeBuffer in GifEncoder::encode failed";
     }
+    */
 
     GifFileType *gif_file = EGifOpen(&gif, gif_writer);
     if (!gif_file) {
@@ -272,7 +283,7 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
         gif_file = EGifOpen(&gif, gif_writer); 
         if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
 
-        output_color_map = MakeMapObject(color_map_size, NULL);
+        output_color_map = MakeMapObject(color_map_size, ext_web_safe_palette);
         if (!output_color_map) throw "MakeMapObject in AnimatedGifEncoder::new_frame failed";
 
         gif_buf = (GifByteType *)malloc(sizeof(GifByteType)*width*height);
@@ -281,33 +292,23 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 
     RGBator rgb(data, width, height, buf_type);
 
+    if (web_safe_quantize(width, height, rgb.red, rgb.green, rgb.blue, gif_buf) == GIF_ERROR)
+    {
+        FreeMapObject(output_color_map);
+        free(gif_buf);
+        throw "web_safe_quantize in AnimatedGifEncoder::new_frame failed";
+    }
+
+    /*
     if (QuantizeBuffer(width, height, &color_map_size,
         rgb.red, rgb.green, rgb.blue,
         gif_buf, output_color_map->Colors) == GIF_ERROR)
     {
         throw "QuantizeBuffer in AnimatedGifEncoder::new_frame failed";
     }
+    */
 
     if (!headers_set) {
-        if (transparency_color.color_present) {
-            int i = find_color_index(output_color_map, color_map_size, transparency_color);
-            //transparency_color_idx = i;
-            if (i == -1) {
-                if (color_map_size == 256)
-                    color_map_size = 255;
-
-                output_color_map->Colors[color_map_size].Red = transparency_color.r;
-                output_color_map->Colors[color_map_size].Green = transparency_color.g;
-                output_color_map->Colors[color_map_size].Blue = transparency_color.b;
-                //transparency_color_idx = color_map_size;
-
-                color_map_size++;
-                color_map_size = nearest_pow2(color_map_size);
-                output_color_map->ColorCount = color_map_size;
-                output_color_map->BitsPerPixel = BitSize(color_map_size);
-            }
-        }
-
         EGifSetGifVersion("89a");
         if (EGifPutScreenDesc(gif_file, width, height,
             color_map_size, 0, output_color_map) == GIF_ERROR)
@@ -320,13 +321,6 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
         EGifPutExtensionLast(gif_file, APPLICATION_EXT_FUNC_CODE, 3, animation_extension);
         headers_set = true;
     }
-
-    /*
-    for (int i = 0; i < color_map_size; i++) {
-        printf("%d: %02x %02x %02x\n", i, output_color_map->Colors[i].Red,
-            output_color_map->Colors[i].Green, output_color_map->Colors[i].Blue);
-    }
-    */
 
     char frame_flags = 1 << 2;
     char transp_color_idx = 0;

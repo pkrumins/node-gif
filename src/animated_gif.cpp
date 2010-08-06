@@ -17,14 +17,16 @@ AnimatedGif::Initialize(Handle<Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "endPush", EndPush);
     NODE_SET_PROTOTYPE_METHOD(t, "getGif", GetGif);
-    NODE_SET_PROTOTYPE_METHOD(t, "setTransparencyColor", SetTransparencyColor);
     target->Set(String::NewSymbol("AnimatedGif"), t->GetFunction());
 }
 
 AnimatedGif::AnimatedGif(int wwidth, int hheight, buffer_type bbuf_type) :
     width(wwidth), height(hheight), buf_type(bbuf_type),
-    gif_encoder(wwidth, hheight, bbuf_type),
-    data(NULL) {}
+    gif_encoder(wwidth, hheight, bbuf_type), transparency_color(0xFF, 0xFF, 0xFE),
+    data(NULL)
+{
+    gif_encoder.set_transparency_color(transparency_color);
+}
 
 Handle<Value>
 AnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
@@ -33,12 +35,8 @@ AnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
         data = (unsigned char *)malloc(sizeof(*data)*width*height*3);
         if (!data) throw "malloc in AnimatedGif::Push failed";
 
-        if (!transparency_color.color_present) {
-            transparency_color = Color(0xD8, 0xA8, 0x10);
-            gif_encoder.set_transparency_color(transparency_color);
-        }
         unsigned char *datap = data;
-        for (int i = 0; i < width*height*3; i+=3) {
+        for (int i = 0; i < width*height; i++) {
             *datap++ = transparency_color.r;
             *datap++ = transparency_color.g;
             *datap++ = transparency_color.b;
@@ -47,11 +45,13 @@ AnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
 
     int start = y*width*3 + x*3;
 
+    unsigned char *data_bufp = data_buf;
     for (int i = 0; i < h; i++) {
-        for (int j = 0; j < 3*w; j+=3) {
-            data[start + i*width*3 + j] = data_buf[i*w*3 + j];
-            data[start + i*width*3 + j + 1] = data_buf[i*w*3 + j + 1];
-            data[start + i*width*3 + j + 2] = data_buf[i*w*3 + j + 2];
+        unsigned char *datap = &data[start + i*width*3];
+        for (int j = 0; j < w; j++) {
+            *datap++ = *data_bufp++;
+            *datap++ = *data_bufp++;
+            *datap++ = *data_bufp++;
         }
     }
 }
@@ -189,30 +189,5 @@ AnimatedGif::GetGif(const Arguments &args)
     return scope.Close(
         Encode((char *)gif->gif_encoder.get_gif(), gif->gif_encoder.get_gif_len(), BINARY)
     );
-}
-
-Handle<Value>
-AnimatedGif::SetTransparencyColor(const Arguments &args)
-{
-    HandleScope scope;
-
-    if (args.Length() != 3)
-        return VException("Three arguments required - r, g, b");
-
-    if (!args[0]->IsInt32())
-        return VException("First argument must be integer red.");
-    if (!args[1]->IsInt32())
-        return VException("Second argument must be integer green.");
-    if (!args[2]->IsInt32())
-        return VException("Third argument must be integer blue.");
-    
-    unsigned char r = args[0]->Int32Value();
-    unsigned char g = args[1]->Int32Value();
-    unsigned char b = args[2]->Int32Value();
-
-    AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
-    gif->gif_encoder.set_transparency_color(r, g, b);
-
-    return Undefined();
 }
 

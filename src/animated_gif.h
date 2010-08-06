@@ -26,7 +26,6 @@ public:
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
     static v8::Handle<v8::Value> EndPush(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetGif(const v8::Arguments &args);
-    static v8::Handle<v8::Value> SetTransparencyColor(const v8::Arguments &args);
 };
 
 #endif

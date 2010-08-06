@@ -26,9 +26,7 @@ Gif::GifEncode()
     HandleScope scope;
 
     try {
-        GifEncoder encoder(
-            (unsigned char *)data->data(), width, height, buf_type
-        );
+        GifEncoder encoder((unsigned char *)data->data(), width, height, buf_type);
         if (transparency_color.color_present) {
             encoder.set_transparency_color(transparency_color);
         }
