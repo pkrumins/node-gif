@@ -91,17 +91,6 @@ DynamicGifStack::GifEncode()
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
                 for (int j = 0; j < gif->w; j++) {
-                    if (gifdatap[0] == transparency_color.r &&
-                        gifdatap[1] == transparency_color.g &&
-                        gifdatap[2] == transparency_color.b)
-                    {
-                        if (gifdatap[2] < 0xFF) {
-                            gifdatap[2]++;
-                        }
-                        else {
-                            gifdatap[2]--;
-                        }
-                    }
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
@@ -118,20 +107,10 @@ DynamicGifStack::GifEncode()
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
                 for (int j = 0; j < gif->w; j++) {
-                    if (gifdatap[2] == transparency_color.r &&
-                        gifdatap[1] == transparency_color.g &&
-                        gifdatap[0] == transparency_color.b)
-                    {
-                        if (gifdatap[0] < 0xFF) {
-                            gifdatap[0]++;
-                        }
-                        else {
-                            gifdatap[0]--;
-                        }
-                    }
-                    *datap++ = *(gifdatap++ + 2);
-                    *datap++ = *(gifdatap++ + 1);
-                    *datap++ = *gifdatap++;
+                    *datap++ = *(gifdatap + 2);
+                    *datap++ = *(gifdatap + 1);
+                    *datap++ = *gifdatap;
+                    gifdatap += 3;
                 }
             }
         }
@@ -145,17 +124,6 @@ DynamicGifStack::GifEncode()
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
                 for (int j = 0; j < gif->w; j++) {
-                    if (gifdatap[0] == transparency_color.r &&
-                        gifdatap[1] == transparency_color.g &&
-                        gifdatap[2] == transparency_color.b)
-                    {
-                        if (gifdatap[2] < 0xFF) {
-                            gifdatap[2]++;
-                        }
-                        else {
-                            gifdatap[2]--;
-                        }
-                    }
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
@@ -173,21 +141,10 @@ DynamicGifStack::GifEncode()
             for (int i = 0; i < gif->h; i++) {
                 unsigned char *datap = &data[start + i*width*3];
                 for (int j = 0; j < gif->w; j++) {
-                    if (gifdatap[2] == transparency_color.r &&
-                        gifdatap[1] == transparency_color.g &&
-                        gifdatap[0] == transparency_color.b)
-                    {
-                        if (gifdatap[0] < 0xFF) {
-                            gifdatap[0]++;
-                        }
-                        else {
-                            gifdatap[0]--;
-                        }
-                    }
-                    *datap++ = *(gifdatap++ + 2);
-                    *datap++ = *(gifdatap++ + 1);
-                    *datap++ = *gifdatap++;
-                    gifdatap++;
+                    *datap++ = *(gifdatap + 2);
+                    *datap++ = *(gifdatap + 1);
+                    *datap++ = *gifdatap;
+                    gifdatap += 4;
                 }
             }
         }
