@@ -20,7 +20,7 @@ class GifEncoder {
     int width, height;
     buffer_type buf_type;
     GifImage gif;
-    Color transparent_color;
+    Color transparency_color;
 
 public:
     GifEncoder(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type);
@@ -44,8 +44,8 @@ class AnimatedGifEncoder {
     int color_map_size;
 
     bool headers_set;
-    Color transparent_color;
-    int transparent_color_idx;
+    Color transparency_color;
+    int transparency_color_idx;
 
     void end_encoding();
 public:

@@ -181,8 +181,8 @@ GifEncoder::encode()
         throw "EGifPutScreenDesc in GifEncoder::encode failed";
     }
 
-    if (transparent_color.color_present) {
-        int i = find_color_index(output_color_map, color_map_size, transparent_color);
+    if (transparency_color.color_present) {
+        int i = find_color_index(output_color_map, color_map_size, transparency_color);
         if (i) {
             char extension[] = {
                 1, // enable transparency
@@ -219,16 +219,16 @@ GifEncoder::encode()
 void
 GifEncoder::set_transparency_color(unsigned char r, unsigned char g, unsigned char b)
 {
-    transparent_color.r = r;
-    transparent_color.r = g;
-    transparent_color.r = b;
-    transparent_color.color_present = true;
+    transparency_color.r = r;
+    transparency_color.r = g;
+    transparency_color.r = b;
+    transparency_color.color_present = true;
 }
 
 void
 GifEncoder::set_transparency_color(const Color &c)
 {
-    transparent_color = c;
+    transparency_color = c;
 }
 
 const unsigned char *
@@ -289,17 +289,17 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
     }
 
     if (!headers_set) {
-        if (transparent_color.color_present) {
-            int i = find_color_index(output_color_map, color_map_size, transparent_color);
-            //transparent_color_idx = i;
+        if (transparency_color.color_present) {
+            int i = find_color_index(output_color_map, color_map_size, transparency_color);
+            //transparency_color_idx = i;
             if (i == -1) {
                 if (color_map_size == 256)
                     color_map_size = 255;
 
-                output_color_map->Colors[color_map_size].Red = transparent_color.r;
-                output_color_map->Colors[color_map_size].Green = transparent_color.g;
-                output_color_map->Colors[color_map_size].Blue = transparent_color.b;
-                //transparent_color_idx = color_map_size;
+                output_color_map->Colors[color_map_size].Red = transparency_color.r;
+                output_color_map->Colors[color_map_size].Green = transparency_color.g;
+                output_color_map->Colors[color_map_size].Blue = transparency_color.b;
+                //transparency_color_idx = color_map_size;
 
                 color_map_size++;
                 color_map_size = nearest_pow2(color_map_size);
@@ -330,8 +330,8 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 
     char frame_flags = 1 << 2;
     char transp_color_idx = 0;
-    if (transparent_color.color_present) {
-        int i = find_color_index(output_color_map, color_map_size, transparent_color);
+    if (transparency_color.color_present) {
+        int i = find_color_index(output_color_map, color_map_size, transparency_color);
         if (i>=0) {
             frame_flags |= 1;
             transp_color_idx = i;
@@ -367,16 +367,16 @@ AnimatedGifEncoder::finish()
 void
 AnimatedGifEncoder::set_transparency_color(unsigned char r, unsigned char g, unsigned char b)
 {
-    transparent_color.r = r;
-    transparent_color.r = g;
-    transparent_color.r = b;
-    transparent_color.color_present = true;
+    transparency_color.r = r;
+    transparency_color.r = g;
+    transparency_color.r = b;
+    transparency_color.color_present = true;
 }
 
 void
 AnimatedGifEncoder::set_transparency_color(const Color &c)
 {
-    transparent_color = c;
+    transparency_color = c;
 }
 
 const unsigned char *
