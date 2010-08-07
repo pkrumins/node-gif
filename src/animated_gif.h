@@ -25,7 +25,9 @@ public:
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
     static v8::Handle<v8::Value> EndPush(const v8::Arguments &args);
+    static v8::Handle<v8::Value> End(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetGif(const v8::Arguments &args);
+    static v8::Handle<v8::Value> SetOutputFile(const v8::Arguments &args);
 };
 
 #endif

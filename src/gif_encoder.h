@@ -1,6 +1,7 @@
 #ifndef GIF_ENCODER_H
 #define GIF_ENCODER_H
 
+#include <string>
 #include <gif_lib.h>
 
 #include "common.h"
@@ -46,6 +47,8 @@ class AnimatedGifEncoder {
     bool headers_set;
     Color transparency_color;
 
+    std::string file_name;
+
     void end_encoding();
 public:
     AnimatedGifEncoder(int wwidth, int hheight, buffer_type bbuf_type);
@@ -56,6 +59,8 @@ public:
 
     void set_transparency_color(unsigned char r, unsigned char g, unsigned char b);
     void set_transparency_color(const Color &c);
+
+    void set_output_file(const char *ffile_name);
 
     const unsigned char *get_gif() const;
     const int get_gif_len() const;

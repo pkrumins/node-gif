@@ -17,6 +17,8 @@ AnimatedGif::Initialize(Handle<Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "endPush", EndPush);
     NODE_SET_PROTOTYPE_METHOD(t, "getGif", GetGif);
+    NODE_SET_PROTOTYPE_METHOD(t, "end", End);
+    NODE_SET_PROTOTYPE_METHOD(t, "setOutputFile", SetOutputFile);
     target->Set(String::NewSymbol("AnimatedGif"), t->GetFunction());
 }
 
@@ -205,5 +207,35 @@ AnimatedGif::GetGif(const Arguments &args)
     return scope.Close(
         Encode((char *)gif->gif_encoder.get_gif(), gif->gif_encoder.get_gif_len(), BINARY)
     );
+}
+
+Handle<Value>
+AnimatedGif::End(const Arguments &args)
+{
+    HandleScope scope;
+
+    AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
+    gif->gif_encoder.finish();
+
+    return Undefined();
+}
+
+Handle<Value>
+AnimatedGif::SetOutputFile(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - path to output file.");
+
+    if (!args[0]->IsString())
+        return VException("First argument must be string.");
+
+    String::AsciiValue file_name(args[0]->ToString());
+
+    AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
+    gif->gif_encoder.set_output_file(*file_name);
+
+    return Undefined();
 }
 

@@ -281,8 +281,14 @@ void
 AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 {
     if (!gif_file) {
-        gif_file = EGifOpen(&gif, gif_writer); 
-        if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
+        if (file_name.empty()) { // memory writer
+            gif_file = EGifOpen(&gif, gif_writer); 
+            if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
+        }
+        else {
+            gif_file = EGifOpenFileName(file_name.c_str(), FALSE);
+            if (!gif_file) throw "EGifOpenFileName in AnimatedGifEncoder::new_frame failed";
+        }
 
         output_color_map = MakeMapObject(color_map_size, ext_web_safe_palette);
         if (!output_color_map) throw "MakeMapObject in AnimatedGifEncoder::new_frame failed";
@@ -384,5 +390,11 @@ const int
 AnimatedGifEncoder::get_gif_len() const
 {
     return gif.size;
+}
+
+void
+AnimatedGifEncoder::set_output_file(const char *ffile_name)
+{
+    file_name = ffile_name;
 }
 
