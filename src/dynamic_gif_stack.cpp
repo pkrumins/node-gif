@@ -84,38 +84,6 @@ DynamicGifStack::GifEncode()
 
     switch (buf_type) {
     case BUF_RGB:
-        for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
-            GifUpdate *gif = *it;
-            int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
-            unsigned char *gifdatap = gif->data;
-            for (int i = 0; i < gif->h; i++) {
-                unsigned char *datap = &data[start + i*width*3];
-                for (int j = 0; j < gif->w; j++) {
-                    *datap++ = *gifdatap++;
-                    *datap++ = *gifdatap++;
-                    *datap++ = *gifdatap++;
-                }
-            }
-        }
-        break;
-
-    case BUF_BGR:
-        for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
-            GifUpdate *gif = *it;
-            int start = (gif->y - top.y)*width*3 + (gif->x - top.x)*3;
-            unsigned char *gifdatap = gif->data;
-            for (int i = 0; i < gif->h; i++) {
-                unsigned char *datap = &data[start + i*width*3];
-                for (int j = 0; j < gif->w; j++) {
-                    *datap++ = *(gifdatap + 2);
-                    *datap++ = *(gifdatap + 1);
-                    *datap++ = *gifdatap;
-                    gifdatap += 3;
-                }
-            }
-        }
-        break;
-
     case BUF_RGBA:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
@@ -127,12 +95,13 @@ DynamicGifStack::GifEncode()
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
                     *datap++ = *gifdatap++;
-                    gifdatap++;
+                    if (buf_type == BUF_RGBA) gifdatap++;
                 }
             }
         }
         break;
 
+    case BUF_BGR:
     case BUF_BGRA:
         for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
             GifUpdate *gif = *it;
@@ -144,7 +113,7 @@ DynamicGifStack::GifEncode()
                     *datap++ = *(gifdatap + 2);
                     *datap++ = *(gifdatap + 1);
                     *datap++ = *gifdatap;
-                    gifdatap += 4;
+                    gifdatap += (buf_type == BUF_BGRA) ? 4 : 3;
                 }
             }
         }
