@@ -19,6 +19,7 @@ def build(bld):
   obj.target = "gif"
   obj.source = "src/common.cpp src/palette.cpp src/quantize.cpp src/gif_encoder.cpp src/gif.cpp src/dynamic_gif_stack.cpp src/animated_gif.cpp src/module.cpp"
   obj.uselib = "GIF"
+  obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
 
 def shutdown():
   if Options.commands['clean']:

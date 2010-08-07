@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstring>
 #include "common.h"
 #include "gif_encoder.h"
 #include "gif.h"
@@ -12,7 +14,8 @@ Gif::Initialize(Handle<Object> target)
 
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncode);
+    NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncodeAsync);
+    NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", GifEncodeSync);
     NODE_SET_PROTOTYPE_METHOD(t, "setTransparencyColor", SetTransparencyColor);
     target->Set(String::NewSymbol("Gif"), t->GetFunction());
 }
@@ -21,7 +24,7 @@ Gif::Gif(Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
     data(ddata), width(wwidth), height(hheight), buf_type(bbuf_type) {}
 
 Handle<Value>
-Gif::GifEncode()
+Gif::GifEncodeSync()
 {
     HandleScope scope;
 
@@ -99,12 +102,12 @@ Gif::New(const Arguments &args)
 }
 
 Handle<Value>
-Gif::GifEncode(const Arguments &args)
+Gif::GifEncodeSync(const Arguments &args)
 {
     HandleScope scope;
 
     Gif *gif = ObjectWrap::Unwrap<Gif>(args.This());
-    return gif->GifEncode();
+    return scope.Close(gif->GifEncodeSync());
 }
 
 Handle<Value>
@@ -128,6 +131,111 @@ Gif::SetTransparencyColor(const Arguments &args)
 
     Gif *gif = ObjectWrap::Unwrap<Gif>(args.This());
     gif->SetTransparencyColor(r, g, b);
+
+    return Undefined();
+}
+
+struct encode_request {
+    v8::Persistent<v8::Function> callback;
+    void *gif_obj;
+    char *gif;
+    int gif_len;
+    char *error;
+};
+
+int
+Gif::EIO_GifEncode(eio_req *req)
+{
+    encode_request *enc_req = (encode_request *)req->data;
+    Gif *gif = (Gif *)enc_req->gif_obj;
+
+    try {
+        GifEncoder encoder((unsigned char *)gif->data->data(), gif->width, gif->height, gif->buf_type);
+        if (gif->transparency_color.color_present) {
+            encoder.set_transparency_color(gif->transparency_color);
+        }
+        encoder.encode();
+        enc_req->gif_len = encoder.get_gif_len();
+        enc_req->gif = (char *)malloc(sizeof(*enc_req->gif)*enc_req->gif_len);
+        if (!enc_req->gif) {
+            enc_req->error = strdup("malloc in Gif::EIO_GifEncode failed.");
+            return 0;
+        }
+        else {
+            memcpy(enc_req->gif, encoder.get_gif(), enc_req->gif_len);
+        }
+    }
+    catch (const char *err) {
+        enc_req->error = strdup(err);
+    }
+
+    return 0;
+}
+
+int 
+Gif::EIO_GifEncodeAfter(eio_req *req)
+{
+    HandleScope scope;
+
+    ev_unref(EV_DEFAULT_UC);
+    encode_request *enc_req = (encode_request *)req->data;
+
+    Handle<Value> argv[2];
+
+    if (enc_req->error) {
+        argv[0] = Undefined();
+        argv[1] = ErrorException(enc_req->error);
+    }
+    else {
+        argv[0] = Local<Value>::New(Encode(enc_req->gif, enc_req->gif_len, BINARY));
+        argv[1] = Undefined();
+    }
+
+    TryCatch try_catch; // don't quite see the necessity of this
+
+    enc_req->callback->Call(Context::GetCurrent()->Global(), 2, argv);
+
+    if (try_catch.HasCaught())
+        FatalException(try_catch);
+
+    enc_req->callback.Dispose();
+    free(enc_req->gif);
+    free(enc_req->error);
+
+    ((Gif *)enc_req->gif_obj)->Unref();
+    free(enc_req);
+
+    return 0;
+}
+
+Handle<Value>
+Gif::GifEncodeAsync(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - callback function.");
+
+    if (!args[0]->IsFunction())
+        return VException("First argument must be a function.");
+
+    Local<Function> callback = Local<Function>::Cast(args[0]);
+    Gif *gif = ObjectWrap::Unwrap<Gif>(args.This());
+
+    encode_request *enc_req = (encode_request *)malloc(sizeof(*enc_req));
+    if (!enc_req)
+        return VException("malloc in Gif::GifEncodeAsync failed.");
+
+    enc_req->callback = Persistent<Function>::New(callback);
+    enc_req->gif_obj = gif;
+    enc_req->gif = NULL;
+    enc_req->gif_len = 0;
+    enc_req->error = NULL;
+
+    eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+
+    ev_ref(EV_DEFAULT_UC);
+    gif->Ref();
 
     return Undefined();
 }

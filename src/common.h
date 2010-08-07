@@ -4,6 +4,7 @@
 #include <node.h>
 #include <cstring>
 
+v8::Handle<v8::Value> ErrorException(const char *msg);
 v8::Handle<v8::Value> VException(const char *msg);
 
 struct Point {
