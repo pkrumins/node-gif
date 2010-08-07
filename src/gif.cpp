@@ -135,14 +135,6 @@ Gif::SetTransparencyColor(const Arguments &args)
     return Undefined();
 }
 
-struct encode_request {
-    v8::Persistent<v8::Function> callback;
-    void *gif_obj;
-    char *gif;
-    int gif_len;
-    char *error;
-};
-
 int
 Gif::EIO_GifEncode(eio_req *req)
 {

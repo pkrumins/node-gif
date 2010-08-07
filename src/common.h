@@ -32,5 +32,13 @@ bool str_eq(const char *s1, const char *s2);
 
 typedef enum { BUF_RGB, BUF_BGR, BUF_RGBA, BUF_BGRA } buffer_type;
 
+struct encode_request {
+    v8::Persistent<v8::Function> callback;
+    void *gif_obj;
+    char *gif;
+    int gif_len;
+    char *error;
+};
+
 #endif
 

@@ -37,7 +37,11 @@ class DynamicGifStack : public node::ObjectWrap {
     buffer_type buf_type;
     Color transparency_color;
 
-    std::pair<Point, Point> OptimalDimension();
+    std::pair<Point, Point> optimal_dimension();
+
+    static int EIO_GifEncode(eio_req *req);
+    static int EIO_GifEncodeAfter(eio_req *req);
+    void construct_gif_data(unsigned char *data, Point &top);
 
 public:
     static void Initialize(v8::Handle<v8::Object> target);
@@ -46,12 +50,13 @@ public:
 
     v8::Handle<v8::Value> Push(node::Buffer *buf, int x, int y, int w, int h);
     v8::Handle<v8::Value> Dimensions();
-    v8::Handle<v8::Value> GifEncode();
+    v8::Handle<v8::Value> GifEncodeSync();
 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
     static v8::Handle<v8::Value> Dimensions(const v8::Arguments &args);
-    static v8::Handle<v8::Value> GifEncode(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GifEncodeSync(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GifEncodeAsync(const v8::Arguments &args);
 };
 
 #endif

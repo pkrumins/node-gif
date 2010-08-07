@@ -22,10 +22,10 @@ files.forEach(function(file) {
     gifStack.push(rgba, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('dynamic.gif', gifStack.encodeSync(), 'binary');
+gifStack.encode(function (data, dims) {
+    fs.writeFileSync('dynamic-async.gif', data, 'binary');
 
-var dims = gifStack.dimensions();
-
-sys.log("GIF located at (" + dims.x + "," + dims.y + ") with width " +
-    dims.width + " and height " + dims.height);
+    sys.log("GIF located at (" + dims.x + "," + dims.y + ") with width " +
+        dims.width + " and height " + dims.height);
+});
 

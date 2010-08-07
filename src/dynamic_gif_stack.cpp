@@ -6,7 +6,7 @@ using namespace v8;
 using namespace node;
 
 std::pair<Point, Point>
-DynamicGifStack::OptimalDimension()
+DynamicGifStack::optimal_dimension()
 {
     Point top(-1, -1), bottom(-1, -1);
     for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it) {
@@ -25,63 +25,8 @@ DynamicGifStack::OptimalDimension()
 }
 
 void
-DynamicGifStack::Initialize(Handle<Object> target)
+DynamicGifStack::construct_gif_data(unsigned char *data, Point &top)
 {
-    HandleScope scope;
-
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
-    t->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
-    NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncode);
-    NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
-    target->Set(String::NewSymbol("DynamicGifStack"), t->GetFunction());
-}
-
-DynamicGifStack::DynamicGifStack(buffer_type bbuf_type) :
-    buf_type(bbuf_type), transparency_color(0xFF, 0xFF, 0xFE) {}
-
-DynamicGifStack::~DynamicGifStack()
-{
-    for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it)
-        delete *it;
-}
-
-Handle<Value>
-DynamicGifStack::Push(Buffer *buf, int x, int y, int w, int h)
-{
-    try {
-        GifUpdate *gif_update =
-            new GifUpdate((unsigned char *)buf->data(), buf->length(), x, y, w, h);
-        gif_stack.push_back(gif_update);
-        return Undefined();
-    }
-    catch (const char *e) {
-        return VException(e);
-    }
-}
-
-Handle<Value>
-DynamicGifStack::GifEncode()
-{
-    HandleScope scope;
-
-    std::pair<Point, Point> optimal = OptimalDimension();
-    Point top = optimal.first, bot = optimal.second;
-
-    offset = top;
-    width = bot.x - top.x;
-    height = bot.y - top.y;
-
-    unsigned char *data = (unsigned char*)malloc(sizeof(*data)*width*height*3);
-    if (!data) return VException("malloc failed in DynamicGifStack::GifEncode");
-
-    unsigned char *datap = data;
-    for (int i = 0; i < width*height*3; i+=3) {
-        *datap++ = transparency_color.r;
-        *datap++ = transparency_color.g;
-        *datap++ = transparency_color.b;
-    }
-
     switch (buf_type) {
     case BUF_RGB:
     case BUF_RGBA:
@@ -122,6 +67,68 @@ DynamicGifStack::GifEncode()
     default:
         throw "Unexpected buf_type in DynamicGifStack::GifEncode";
     }
+}
+
+void
+DynamicGifStack::Initialize(Handle<Object> target)
+{
+    HandleScope scope;
+
+    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    t->InstanceTemplate()->SetInternalFieldCount(1);
+    NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
+    NODE_SET_PROTOTYPE_METHOD(t, "encode", GifEncodeAsync);
+    NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", GifEncodeSync);
+    NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
+    target->Set(String::NewSymbol("DynamicGifStack"), t->GetFunction());
+}
+
+DynamicGifStack::DynamicGifStack(buffer_type bbuf_type) :
+    buf_type(bbuf_type), transparency_color(0xFF, 0xFF, 0xFE) {}
+
+DynamicGifStack::~DynamicGifStack()
+{
+    for (GifUpdates::iterator it = gif_stack.begin(); it != gif_stack.end(); ++it)
+        delete *it;
+}
+
+Handle<Value>
+DynamicGifStack::Push(Buffer *buf, int x, int y, int w, int h)
+{
+    try {
+        GifUpdate *gif_update =
+            new GifUpdate((unsigned char *)buf->data(), buf->length(), x, y, w, h);
+        gif_stack.push_back(gif_update);
+        return Undefined();
+    }
+    catch (const char *e) {
+        return VException(e);
+    }
+}
+
+Handle<Value>
+DynamicGifStack::GifEncodeSync()
+{
+    HandleScope scope;
+
+    std::pair<Point, Point> optimal = optimal_dimension();
+    Point top = optimal.first, bot = optimal.second;
+
+    offset = top;
+    width = bot.x - top.x;
+    height = bot.y - top.y;
+
+    unsigned char *data = (unsigned char*)malloc(sizeof(*data)*width*height*3);
+    if (!data) return VException("malloc failed in DynamicGifStack::GifEncode");
+
+    unsigned char *datap = data;
+    for (int i = 0; i < width*height*3; i+=3) {
+        *datap++ = transparency_color.r;
+        *datap++ = transparency_color.g;
+        *datap++ = transparency_color.b;
+    }
+
+    construct_gif_data(data, top);
 
     try {
         GifEncoder gif_encoder(data, width, height, BUF_RGB);
@@ -230,11 +237,135 @@ DynamicGifStack::Dimensions(const Arguments &args)
 }
 
 Handle<Value>
-DynamicGifStack::GifEncode(const Arguments &args)
+DynamicGifStack::GifEncodeSync(const Arguments &args)
 {
     HandleScope scope;
 
     DynamicGifStack *gif_stack = ObjectWrap::Unwrap<DynamicGifStack>(args.This());
-    return scope.Close(gif_stack->GifEncode());
+    return scope.Close(gif_stack->GifEncodeSync());
+}
+
+int
+DynamicGifStack::EIO_GifEncode(eio_req *req)
+{
+    encode_request *enc_req = (encode_request *)req->data;
+    DynamicGifStack *gif = (DynamicGifStack *)enc_req->gif_obj;
+
+    std::pair<Point, Point> optimal = gif->optimal_dimension();
+    Point top = optimal.first, bot = optimal.second;
+
+    gif->offset = top;
+    gif->width = bot.x - top.x;
+    gif->height = bot.y - top.y;
+
+    unsigned char *data = (unsigned char*)malloc(sizeof(*data)*gif->width*gif->height*3);
+    if (!data) {
+        enc_req->error = strdup("malloc failed in DynamicGifStack::EIO_GifEncode.");
+        return 0;
+    }
+
+    unsigned char *datap = data;
+    for (int i = 0; i < gif->width*gif->height; i++) {
+        *datap++ = gif->transparency_color.r;
+        *datap++ = gif->transparency_color.g;
+        *datap++ = gif->transparency_color.b;
+    }
+
+    gif->construct_gif_data(data, top);
+
+    buffer_type pbt = (gif->buf_type == BUF_BGR || gif->buf_type == BUF_BGRA) ?
+        BUF_BGRA : BUF_RGBA;
+
+    try {
+        GifEncoder gif_encoder(data, gif->width, gif->height, BUF_RGB);
+        gif_encoder.set_transparency_color(gif->transparency_color);
+        gif_encoder.encode();
+        free(data);
+        enc_req->gif_len = gif_encoder.get_gif_len();
+        enc_req->gif = (char *)malloc(sizeof(*enc_req->gif)*enc_req->gif_len);
+        if (!enc_req->gif) {
+            enc_req->error = strdup("malloc in DynamicGifStack::EIO_GifEncode failed.");
+            return 0;
+        }
+        else {
+            memcpy(enc_req->gif, gif_encoder.get_gif(), enc_req->gif_len);
+        }
+    }
+    catch (const char *err) {
+        enc_req->error = strdup(err);
+    }
+
+    return 0;
+}
+
+int 
+DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
+{
+    HandleScope scope;
+
+    ev_unref(EV_DEFAULT_UC);
+    encode_request *enc_req = (encode_request *)req->data;
+    DynamicGifStack *gif = (DynamicGifStack *)enc_req->gif_obj;
+
+    Handle<Value> argv[3];
+
+    if (enc_req->error) {
+        argv[0] = Undefined();
+        argv[1] = Undefined();
+        argv[2] = ErrorException(enc_req->error);
+    }
+    else {
+        argv[0] = Local<Value>::New(Encode(enc_req->gif, enc_req->gif_len, BINARY));
+        argv[1] = gif->Dimensions();
+        argv[2] = Undefined();
+    }
+
+    TryCatch try_catch; // don't quite see the necessity of this
+
+    enc_req->callback->Call(Context::GetCurrent()->Global(), 3, argv);
+
+    if (try_catch.HasCaught())
+        FatalException(try_catch);
+
+    enc_req->callback.Dispose();
+    free(enc_req->gif);
+    free(enc_req->error);
+
+    gif->Unref();
+    free(enc_req);
+
+    return 0;
+}
+
+Handle<Value>
+DynamicGifStack::GifEncodeAsync(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - callback function.");
+
+    if (!args[0]->IsFunction())
+        return VException("First argument must be a function.");
+
+    Local<Function> callback = Local<Function>::Cast(args[0]);
+    DynamicGifStack *gif = ObjectWrap::Unwrap<DynamicGifStack>(args.This());
+
+    encode_request *enc_req = (encode_request *)malloc(sizeof(*enc_req));
+    if (!enc_req)
+        return VException("malloc in DynamicGifStack::GifEncodeAsync failed.");
+
+    enc_req->callback = Persistent<Function>::New(callback);
+    enc_req->gif_obj = gif;
+    enc_req->gif = NULL;
+    enc_req->gif_len = 0;
+    enc_req->error = NULL;
+
+    eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+
+    ev_ref(EV_DEFAULT_UC);
+    gif->Ref();
+
+    return Undefined();
 }
 
