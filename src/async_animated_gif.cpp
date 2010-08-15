@@ -1,12 +1,8 @@
 #include <cerrno>
 #include <cstdlib>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-
 #include "common.h"
+#include "utils.h"
 #include "gif_encoder.h"
 #include "async_animated_gif.h"
 
@@ -34,22 +30,6 @@ AsyncAnimatedGif::AsyncAnimatedGif(int wwidth, int hheight, buffer_type bbuf_typ
     width(wwidth), height(hheight), buf_type(bbuf_type),
     transparency_color(0xFF, 0xFF, 0xFE),
     push_id(0), fragment_id(0) {}
-
-int
-file_size(const char *path)
-{
-    struct stat moo;
-    if (stat(path, &moo) == -1) return -1;
-    return moo.st_size;
-}
-
-bool
-is_dir(const char *path)
-{
-    struct stat moo;
-    if (stat(path, &moo) == -1) return false;
-    return S_ISDIR(moo.st_mode);
-}
 
 int
 AsyncAnimatedGif::EIO_Push(eio_req *req)
@@ -121,11 +101,13 @@ AsyncAnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
     push_request *push_req = (push_request *)malloc(sizeof(*push_req));
     if (!push_req)
         throw "malloc in AsyncAnimatedGif::Push failed.";
+
     push_req->data = (unsigned char *)malloc(sizeof(*push_req->data)*w*h*3);
     if (!push_req->data) {
         free(push_req);
         throw "malloc in AsyncAnimatedGif::Push failed.";
     }
+
     memcpy(push_req->data, data_buf, w*h*3);
     push_req->push_id = push_id;
     push_req->fragment_id = fragment_id++;
@@ -258,57 +240,6 @@ AsyncAnimatedGif::EndPush(const Arguments &args)
     gif->EndPush();
 
     return Undefined();
-}
-
-char **
-find_files(const char *path)
-{
-    char **files;
-    DIR *dp;
-    struct dirent *dirp; 
-
-    if ((dp = opendir(path)) == NULL) {
-        return NULL;
-    }
-    int nfiles = 0;
-    while ((dirp = readdir(dp)) != NULL) {
-        if (str_eq(dirp->d_name, ".") || str_eq(dirp->d_name, ".."))
-            continue;
-        nfiles++;
-    }
-    files = (char **)malloc(sizeof(char *) * (nfiles + 1));
-    files[nfiles] = NULL;
-    int i = 0;
-    rewinddir(dp);
-    while ((dirp = readdir(dp)) != NULL) {
-        if (str_eq(dirp->d_name, ".") || str_eq(dirp->d_name, ".."))
-            continue;
-        int dir_name_len = strlen(dirp->d_name);
-        files[i] = (char *)malloc(sizeof(char) * (dir_name_len + 1));
-        strcpy(files[i], dirp->d_name);
-        i++;
-    }
-    closedir(dp);
-    return files;
-}
-
-void
-free_file_list(char **file_list)
-{
-    char **p = file_list;
-    while (*p)
-        free(*p++);
-    free(file_list);
-}
-
-int
-file_list_length(char **file_list)
-{
-    char **p = file_list;
-    int i = 0;
-    while (*p++)
-        i++;
-    return i;
 }
 
 int
