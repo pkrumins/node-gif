@@ -80,6 +80,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
         push_req->tmp_dir, push_req->push_id, push_req->fragment_id,
         push_req->x, push_req->y, push_req->w, push_req->h);
     FILE *out = fopen(filename, "w+");
+    LOKI_ON_BLOCK_EXIT(fclose, out);
     if (!out) {
         fprintf(stderr, "Failed to open %s in AsyncAnimatedGif::EIO_Push.\n",
             filename); // can't get errno either cause this stuff is async
@@ -90,7 +91,6 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
         fprintf(stderr, "Failed to write all data to %s. Wrote only %d of %d.\n",
             filename, written, push_req->data_size);
     }
-    fclose(out);
 
     return 0;
 }
