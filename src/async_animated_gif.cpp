@@ -115,6 +115,9 @@ AsyncAnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
     if (tmp_dir.empty())
         throw "Tmp dir is not set. Use .setTmpDir to set it before pushing.";
 
+    if (output_file.empty())
+        throw "Output file is not set. Use .setOutputFile to set it before pushing.";
+
     push_request *push_req = (push_request *)malloc(sizeof(*push_req));
     if (!push_req)
         throw "malloc in AsyncAnimatedGif::Push failed.";
