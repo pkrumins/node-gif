@@ -131,10 +131,8 @@ gif_writer(GifFileType *gif_file, const GifByteType *data, int size)
     GifImage *gif = (GifImage *)gif_file->UserData;
     if (gif->size + size > gif->mem_size) {
         GifByteType *new_ptr = (GifByteType *)realloc(gif->gif, gif->size + size + 10*1024);
-        if (!new_ptr) {
-            free(gif->gif);
+        if (!new_ptr)
             throw "realloc in gif_writer failed";
-        }
         gif->gif = new_ptr;
         gif->mem_size = gif->size + size + 10*1024;
     }
