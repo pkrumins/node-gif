@@ -6,7 +6,8 @@ His blog is at http://www.catonmat.net  --  good coders code, great reuse.
 
 ------------------------------------------------------------------------------
 
-This module exports `Gif` and `DynamicGifStack` objects.
+This module exports `Gif`, `DynamicGifStack`, `AnimatedGif` and `AsyncAnimatedGif`
+objects.
 
 
 Gif
@@ -91,6 +92,67 @@ its height is 20, so it stretches to position 230, but the first GIF starts
 at 10, so the upper 10 pixels are not necessary and height becomes 230-10=220.
 
 See `tests/dynamic-gif-stack.js` for a concrete example.
+
+
+AnimatedGif
+-----------
+
+Use this object to create animated gifs. The whole idea is to use `push` and `endPush`
+methods to separate frames. The `push` method is used for stacking, you can stack many
+updates in the frame. Then when you call `endPush` the data you had pushed will be taken
+as a whole and a new frame will be produced.
+
+Once you're done call `getGif` to get the final gif (in memory).
+
+You can also make AnimatedGif to write the final animated gif to file. Call `setOutputFile`
+method to set the output file.
+
+There are two examples of animated gifs in tests/animated-gif directory. Take a look
+if you're interested:
+
+    * animated-gif.js shows how to produce an animated gif in memory and then write
+                      it to a file yourself (this is not recommended as the files can grow
+                      pretty big).
+    * animated-gif-file-writer.js shows how to produce an animated gif to a file.
+
+
+AsyncAnimatedGif
+----------------
+
+This object makes the animated gif creating asynchronous. When you push a fragment
+to `AsyncAnimatedGif`, it writes the fragment to a file asynchronously, and then
+when you're done, it takes all these files and merges them, producing an animated gif.
+
+You must specify the temporary directory where `AsyncAnimatedGif` will put the files
+to. Do it this way:
+
+    var animated = new AsyncAnimatedGif(width, height);
+    animated.setTmpDir('/tmp');
+
+You can only write the animated gifs to files with this object. Don't forget to set
+the output file via `setOutputFile`:
+
+    animated.setOutputFile('animation.gif');
+
+Now you can `push` fragments to it and separate frames by `endPush`. After you're done
+with frames, call `encode` to produce the final gif.
+
+The `encode` method takes a single argument - function that gets called when the final
+gif is produced. The function takes two arguments - `status` which will be true or false,
+and `error` which will be the error message in case `status` is false, or undefined if
+status is true:
+
+    animated.encode(function (status, error) {
+        if (status) {
+            console.log('animated gif successful');
+        }
+        else {
+            console.log('animated gif unsuccessful: ' + error);
+        }
+    });
+
+Take a look at tests/animated-gif/animated-gif-async.js file to see how it works in
+a real example.
 
 
 How to Install?
