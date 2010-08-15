@@ -91,6 +91,8 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
             filename, written, push_req->data_size);
     }
     fclose(out);
+
+    return 0;
 }
 
 int
