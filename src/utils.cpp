@@ -14,7 +14,7 @@ find_files(const char *path)
     char **files = NULL;
     DIR *dp;
     struct dirent *dirp; 
-    int i;
+    int i = 0;
 
     if ((dp = opendir(path)) == NULL) {
         return NULL;
@@ -38,17 +38,16 @@ find_files(const char *path)
         if (!files[i]) {
             int j;
             for (j=0;j<i;j++) free(files[j]);
+            files = NULL;
             goto err_1;
         }
         strcpy(files[i], dirp->d_name);
         i++;
     }
 
-    return files;
-
 err_1:
     closedir(dp);
-    return NULL;
+    return files;
 }
 
 void
@@ -68,6 +67,24 @@ file_list_length(char **file_list)
     while (*p++)
         i++;
     return i;
+}
+
+char **
+filter_file_list(char **file_list, int (*f)(const char *file))
+{
+    char **p = file_list;
+    int nfiles = 0;
+    while (*p)
+        if (f(*p++)) nfiles++;
+    char **files = (char **)malloc(sizeof(char *)*(nfiles+1));
+    if (!files)
+        return NULL;
+    p = file_list;
+    int i = 0;
+    while (*p)
+        if (f(*p))
+            files[i++] = *p++;
+    return files;
 }
 
 int
