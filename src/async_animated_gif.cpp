@@ -40,7 +40,8 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
         if (mkdir(push_req->tmp_dir, 0775) == -1) {
             // there is no way to return this error to node as this call was
             // async with no callback
-            fprintf(stderr, "Could not mkdir(%s).\n", push_req->tmp_dir);
+            fprintf(stderr, "Could not mkdir(%s) in AsyncAnimatedGif::EIO_Push.\n",
+                push_req->tmp_dir);
             return 0;
         }
     }
@@ -50,7 +51,8 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
 
     if (!is_dir(fragment_dir)) {
         if (mkdir(fragment_dir, 0775) == -1) {
-            fprintf(stderr, "Could not mkdir(%s).\n", fragment_dir);
+            fprintf(stderr, "Could not mkdir(%s) in AsyncAnimatedGif::EIO_Push.\n",
+                fragment_dir);
             return 0;
         }
     }
@@ -63,7 +65,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
     LOKI_ON_BLOCK_EXIT(fclose, out);
     if (!out) {
         fprintf(stderr, "Failed to open %s in AsyncAnimatedGif::EIO_Push.\n",
-            filename); // can't get errno either cause this stuff is async
+            filename);
         return 0;
     }
     int written = fwrite(push_req->data, sizeof(unsigned char), push_req->data_size, out);
