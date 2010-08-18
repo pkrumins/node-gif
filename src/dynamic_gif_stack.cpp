@@ -131,13 +131,14 @@ DynamicGifStack::GifEncodeSync()
     construct_gif_data(data, top);
 
     try {
-        GifEncoder gif_encoder(data, width, height, BUF_RGB);
-        gif_encoder.set_transparency_color(transparency_color);
-        gif_encoder.encode();
+        GifEncoder encoder(data, width, height, BUF_RGB);
+        encoder.set_transparency_color(transparency_color);
+        encoder.encode();
         free(data);
-        return scope.Close(
-            Encode((char *)gif_encoder.get_gif(), gif_encoder.get_gif_len(), BINARY)
-        );
+        int gif_len = encoder.get_gif_len();
+        Buffer *retbuf = Buffer::New(gif_len);
+        memcpy(retbuf->data(), encoder.get_gif(), gif_len);
+        return scope.Close(retbuf->handle_);
     }
     catch (const char *err) {
         return VException(err);
@@ -277,18 +278,18 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
         BUF_BGRA : BUF_RGBA;
 
     try {
-        GifEncoder gif_encoder(data, gif->width, gif->height, BUF_RGB);
-        gif_encoder.set_transparency_color(gif->transparency_color);
-        gif_encoder.encode();
+        GifEncoder encoder(data, gif->width, gif->height, BUF_RGB);
+        encoder.set_transparency_color(gif->transparency_color);
+        encoder.encode();
         free(data);
-        enc_req->gif_len = gif_encoder.get_gif_len();
+        enc_req->gif_len = encoder.get_gif_len();
         enc_req->gif = (char *)malloc(sizeof(*enc_req->gif)*enc_req->gif_len);
         if (!enc_req->gif) {
             enc_req->error = strdup("malloc in DynamicGifStack::EIO_GifEncode failed.");
             return 0;
         }
         else {
-            memcpy(enc_req->gif, gif_encoder.get_gif(), enc_req->gif_len);
+            memcpy(enc_req->gif, encoder.get_gif(), enc_req->gif_len);
         }
     }
     catch (const char *err) {
@@ -315,7 +316,9 @@ DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
         argv[2] = ErrorException(enc_req->error);
     }
     else {
-        argv[0] = Local<Value>::New(Encode(enc_req->gif, enc_req->gif_len, BINARY));
+        Buffer *buf = Buffer::New(enc_req->gif_len);
+        memcpy(buf->data(), enc_req->gif, enc_req->gif_len);
+        argv[0] = buf->handle_;
         argv[1] = gif->Dimensions();
         argv[2] = Undefined();
     }

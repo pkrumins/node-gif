@@ -23,7 +23,7 @@ files.forEach(function(file) {
 });
 
 gifStack.encode(function (data, dims) {
-    fs.writeFileSync('dynamic-async.gif', data, 'binary');
+    fs.writeFileSync('dynamic-async.gif', data.toString('binary'), 'binary');
 
     sys.log("GIF located at (" + dims.x + "," + dims.y + ") with width " +
         dims.width + " and height " + dims.height);

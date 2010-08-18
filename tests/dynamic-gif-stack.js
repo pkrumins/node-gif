@@ -22,7 +22,7 @@ files.forEach(function(file) {
     gifStack.push(rgba, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('dynamic.gif', gifStack.encodeSync(), 'binary');
+fs.writeFileSync('dynamic.gif', gifStack.encodeSync().toString('binary'), 'binary');
 
 var dims = gifStack.dimensions();
 
