@@ -34,9 +34,10 @@ Gif::GifEncodeSync()
             encoder.set_transparency_color(transparency_color);
         }
         encoder.encode();
-        return scope.Close(
-            Encode((char *)encoder.get_gif(), encoder.get_gif_len(), BINARY)
-        );
+        int gif_len = encoder.get_gif_len();
+        Buffer *retbuf = Buffer::New(gif_len);
+        memcpy(retbuf->data(), encoder.get_gif(), gif_len);
+        return scope.Close(retbuf->handle_);
     }
     catch (const char *err) {
         return VException(err);
@@ -179,7 +180,9 @@ Gif::EIO_GifEncodeAfter(eio_req *req)
         argv[1] = ErrorException(enc_req->error);
     }
     else {
-        argv[0] = Local<Value>::New(Encode(enc_req->gif, enc_req->gif_len, BINARY));
+        Buffer *buf = Buffer::New(enc_req->gif_len);
+        memcpy(buf->data(), enc_req->gif, enc_req->gif_len);
+        argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
 

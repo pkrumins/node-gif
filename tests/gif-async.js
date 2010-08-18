@@ -8,7 +8,7 @@ var terminal = fs.readFileSync('./terminal.rgb');
 var gif = new Gif(terminal, 720, 400, 'rgb');
 
 gif.encode(function (data) {
-    fs.writeFileSync('./terminal-async.gif', data, 'binary');
+    fs.writeFileSync('./terminal-async.gif', data.toString('binary'), 'binary');
 });
 
 
