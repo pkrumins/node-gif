@@ -30,7 +30,7 @@ You can set the transparent color for the image by using:
     gif.setTransparencyColor(red, green, blue);
 
 Once you have constructed Gif object, call `encode` method to encode and
-produce GIF image.
+produce GIF image. `encode` returns a node.js Buffer.
 
     var image = gif.encode();
 
