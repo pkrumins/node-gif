@@ -204,9 +204,10 @@ AnimatedGif::GetGif(const Arguments &args)
 
     AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
     gif->gif_encoder.finish();
-    return scope.Close(
-        Encode((char *)gif->gif_encoder.get_gif(), gif->gif_encoder.get_gif_len(), BINARY)
-    );
+    int gif_len = gif->gif_encoder.get_gif_len();
+    Buffer *retbuf = Buffer::New(gif_len);
+    memcpy(retbuf->data(), gif->gif_encoder.get_gif(), gif_len);
+    return scope.Close(retbuf->handle_);
 }
 
 Handle<Value>

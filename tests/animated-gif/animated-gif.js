@@ -41,5 +41,5 @@ chunkDirs.forEach(function (dir) {
 
 var gif = animatedGif.getGif();
 
-fs.writeFileSync('animated.gif', gif, 'binary');
+fs.writeFileSync('animated.gif', gif.toString('binary'), 'binary');
 
