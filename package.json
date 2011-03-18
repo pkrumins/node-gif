@@ -1,6 +1,6 @@
 {
    "name": "gif",
-   "version": "1.0.0",
+   "version": "2.0.0",
    "main": "gif",
    "description": "A C++ module for node-js that converts RGB and RGBA buffers to a GIF images (in memory).",
    "keywords": [
@@ -33,7 +33,7 @@
        "tests": "tests"
    },
    "engines": {
-       "node": ">=0.1.93"
+       "node": ">=0.3.0"
    },
    "scripts": {
        "install": "node-waf configure build"
