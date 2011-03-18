@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "gif_encoder.h"
 #include "async_animated_gif.h"
+#include "buffer_compat.h"
 
 #include "loki/ScopeGuard.h"
 
@@ -81,7 +82,7 @@ int
 AsyncAnimatedGif::EIO_PushAfter(eio_req *req)
 {
     ev_unref(EV_DEFAULT_UC);
-    
+
     push_request *push_req = (push_request *)req->data;
     free(push_req->data);
     free(push_req);
@@ -156,7 +157,7 @@ AsyncAnimatedGif::New(const Arguments &args)
         {
             return VException("Third argument must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
-        
+
         if (str_eq(*bts, "rgb"))
             buf_type = BUF_RGB;
         else if (str_eq(*bts, "bgr"))
@@ -199,8 +200,8 @@ AsyncAnimatedGif::Push(const Arguments &args)
         return VException("Fifth argument must be integer h.");
 
     AsyncAnimatedGif *gif = ObjectWrap::Unwrap<AsyncAnimatedGif>(args.This());
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
-    unsigned char *buf = (unsigned char *)data_buf->data();
+    //    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
+    //    unsigned char *buf = (unsigned char *)data_buf->data();
     int x = args[1]->Int32Value();
     int y = args[2]->Int32Value();
     int w = args[3]->Int32Value();
@@ -214,17 +215,18 @@ AsyncAnimatedGif::Push(const Arguments &args)
         return VException("Width smaller than 0.");
     if (h < 0)
         return VException("Height smaller than 0.");
-    if (x >= gif->width) 
+    if (x >= gif->width)
         return VException("Coordinate x exceeds AsyncAnimatedGif's dimensions.");
-    if (y >= gif->height) 
+    if (y >= gif->height)
         return VException("Coordinate y exceeds AsyncAnimatedGif's dimensions.");
-    if (x+w > gif->width) 
+    if (x+w > gif->width)
         return VException("Pushed fragment exceeds AsyncAnimatedGif's width.");
-    if (y+h > gif->height) 
+    if (y+h > gif->height)
         return VException("Pushed fragment exceeds AsyncAnimatedGif's height.");
 
     try {
-        gif->Push(buf, x, y, w, h);
+        char *buf_data = BufferData(args[0]->ToObject());
+        gif->Push((unsigned char*)buf_data, x, y, w, h);
     }
     catch (const char *err) {
         return VException(err);
@@ -368,7 +370,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
                 return 0;
             }
             Rect dims = rect_dims(fragments[i]);
-            push_fragment(frame, gif->width, gif->height, gif->buf_type, 
+            push_fragment(frame, gif->width, gif->height, gif->buf_type,
                 data, dims.x, dims.y, dims.w, dims.h);
         }
         encoder.new_frame(frame);

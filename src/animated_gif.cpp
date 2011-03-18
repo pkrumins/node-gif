@@ -3,6 +3,7 @@
 #include "common.h"
 #include "gif_encoder.h"
 #include "animated_gif.h"
+#include "buffer_compat.h"
 
 using namespace v8;
 using namespace node;
@@ -105,7 +106,7 @@ AnimatedGif::New(const Arguments &args)
         {
             return VException("Third argument must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
-        
+
         if (str_eq(*bts, "rgb"))
             buf_type = BUF_RGB;
         else if (str_eq(*bts, "bgr"))
@@ -148,7 +149,6 @@ AnimatedGif::Push(const Arguments &args)
         return VException("Fifth argument must be integer h.");
 
     AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
     int x = args[1]->Int32Value();
     int y = args[2]->Int32Value();
     int w = args[3]->Int32Value();
@@ -162,17 +162,19 @@ AnimatedGif::Push(const Arguments &args)
         return VException("Width smaller than 0.");
     if (h < 0)
         return VException("Height smaller than 0.");
-    if (x >= gif->width) 
+    if (x >= gif->width)
         return VException("Coordinate x exceeds AnimatedGif's dimensions.");
-    if (y >= gif->height) 
+    if (y >= gif->height)
         return VException("Coordinate y exceeds AnimatedGif's dimensions.");
-    if (x+w > gif->width) 
+    if (x+w > gif->width)
         return VException("Pushed fragment exceeds AnimatedGif's width.");
-    if (y+h > gif->height) 
+    if (y+h > gif->height)
         return VException("Pushed fragment exceeds AnimatedGif's height.");
 
     try {
-        gif->Push((unsigned char *)data_buf->data(), x, y, w, h);
+        char *buf_data = BufferData(args[0]->ToObject());
+
+        gif->Push((unsigned char*)buf_data, x, y, w, h);
     }
     catch (const char *err) {
         return VException(err);
@@ -206,7 +208,7 @@ AnimatedGif::GetGif(const Arguments &args)
     gif->gif_encoder.finish();
     int gif_len = gif->gif_encoder.get_gif_len();
     Buffer *retbuf = Buffer::New(gif_len);
-    memcpy(retbuf->data(), gif->gif_encoder.get_gif(), gif_len);
+    memcpy(BufferData(retbuf), gif->gif_encoder.get_gif(), gif_len);
     return scope.Close(retbuf->handle_);
 }
 

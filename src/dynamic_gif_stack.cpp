@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gif_encoder.h"
 #include "dynamic_gif_stack.h"
+#include "buffer_compat.h"
 
 using namespace v8;
 using namespace node;
@@ -93,11 +94,10 @@ DynamicGifStack::~DynamicGifStack()
 }
 
 Handle<Value>
-DynamicGifStack::Push(Buffer *buf, int x, int y, int w, int h)
+DynamicGifStack::Push(unsigned char *buf_data, size_t buf_len, int x, int y, int w, int h)
 {
     try {
-        GifUpdate *gif_update =
-            new GifUpdate((unsigned char *)buf->data(), buf->length(), x, y, w, h);
+        GifUpdate *gif_update = new GifUpdate(buf_data, buf_len, x, y, w, h);
         gif_stack.push_back(gif_update);
         return Undefined();
     }
@@ -137,7 +137,7 @@ DynamicGifStack::GifEncodeSync()
         free(data);
         int gif_len = encoder.get_gif_len();
         Buffer *retbuf = Buffer::New(gif_len);
-        memcpy(retbuf->data(), encoder.get_gif(), gif_len);
+        memcpy(BufferData(retbuf), encoder.get_gif(), gif_len);
         return scope.Close(retbuf->handle_);
     }
     catch (const char *err) {
@@ -175,7 +175,7 @@ DynamicGifStack::New(const Arguments &args)
         {
             return VException("First argument must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
-        
+
         if (str_eq(*bts, "rgb"))
             buf_type = BUF_RGB;
         else if (str_eq(*bts, "bgr"))
@@ -209,7 +209,6 @@ DynamicGifStack::Push(const Arguments &args)
     if (!args[4]->IsInt32())
         return VException("Fifth argument must be integer h.");
 
-    Buffer *data = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
     int x = args[1]->Int32Value();
     int y = args[2]->Int32Value();
     int w = args[3]->Int32Value();
@@ -225,7 +224,12 @@ DynamicGifStack::Push(const Arguments &args)
         return VException("Height smaller than 0.");
 
     DynamicGifStack *gif_stack = ObjectWrap::Unwrap<DynamicGifStack>(args.This());
-    return scope.Close(gif_stack->Push(data, x, y, w, h));
+
+    Local<Object> buf_obj = args[0]->ToObject();
+    char *buf_data = BufferData(buf_obj);
+    size_t buf_len = BufferLength(buf_obj);
+
+    return scope.Close(gif_stack->Push((unsigned char*)buf_data, buf_len, x, y, w, h));
 }
 
 Handle<Value>
@@ -299,7 +303,7 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
     return 0;
 }
 
-int 
+int
 DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
 {
     HandleScope scope;
@@ -317,7 +321,7 @@ DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->gif_len);
-        memcpy(buf->data(), enc_req->gif, enc_req->gif_len);
+        memcpy(BufferData(buf), enc_req->gif, enc_req->gif_len);
         argv[0] = buf->handle_;
         argv[1] = gif->Dimensions();
         argv[2] = Undefined();

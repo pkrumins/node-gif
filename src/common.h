@@ -38,6 +38,7 @@ struct encode_request {
     char *gif;
     int gif_len;
     char *error;
+    char *buf_data;
 };
 
 #endif

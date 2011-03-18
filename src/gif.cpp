@@ -3,6 +3,7 @@
 #include "common.h"
 #include "gif_encoder.h"
 #include "gif.h"
+#include "buffer_compat.h"
 
 using namespace v8;
 using namespace node;
@@ -20,23 +21,27 @@ Gif::Initialize(Handle<Object> target)
     target->Set(String::NewSymbol("Gif"), t->GetFunction());
 }
 
-Gif::Gif(Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
-    data(ddata), width(wwidth), height(hheight), buf_type(bbuf_type) {}
+Gif::Gif(int wwidth, int hheight, buffer_type bbuf_type) :
+  width(wwidth), height(hheight), buf_type(bbuf_type) {}
 
 Handle<Value>
 Gif::GifEncodeSync()
 {
     HandleScope scope;
 
+    Local<Value> buf_val = handle_->GetHiddenValue(String::New("buffer"));
+
+    char *buf_data = BufferData(buf_val->ToObject());
+
     try {
-        GifEncoder encoder((unsigned char *)data->data(), width, height, buf_type);
+        GifEncoder encoder((unsigned char*)buf_data, width, height, buf_type);
         if (transparency_color.color_present) {
             encoder.set_transparency_color(transparency_color);
         }
         encoder.encode();
         int gif_len = encoder.get_gif_len();
         Buffer *retbuf = Buffer::New(gif_len);
-        memcpy(retbuf->data(), encoder.get_gif(), gif_len);
+        memcpy(BufferData(retbuf), encoder.get_gif(), gif_len);
         return scope.Close(retbuf->handle_);
     }
     catch (const char *err) {
@@ -75,7 +80,7 @@ Gif::New(const Arguments &args)
         {
             return VException("Fourth argument must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
-        
+
         if (str_eq(*bts, "rgb"))
             buf_type = BUF_RGB;
         else if (str_eq(*bts, "bgr"))
@@ -88,7 +93,7 @@ Gif::New(const Arguments &args)
             return VException("Fourth argument wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
     }
 
-    Buffer *data = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
+
     int w = args[1]->Int32Value();
     int h = args[2]->Int32Value();
 
@@ -97,8 +102,12 @@ Gif::New(const Arguments &args)
     if (h < 0)
         return VException("Height smaller than 0.");
 
-    Gif *gif = new Gif(data, w, h, buf_type);
+    Gif *gif = new Gif(w, h, buf_type);
     gif->Wrap(args.This());
+
+    // Save buffer.
+    gif->handle_->SetHiddenValue(String::New("buffer"), args[0]);
+
     return args.This();
 }
 
@@ -125,7 +134,7 @@ Gif::SetTransparencyColor(const Arguments &args)
         return VException("Second argument must be integer green.");
     if (!args[2]->IsInt32())
         return VException("Third argument must be integer blue.");
-    
+
     unsigned char r = args[0]->Int32Value();
     unsigned char g = args[1]->Int32Value();
     unsigned char b = args[2]->Int32Value();
@@ -143,7 +152,7 @@ Gif::EIO_GifEncode(eio_req *req)
     Gif *gif = (Gif *)enc_req->gif_obj;
 
     try {
-        GifEncoder encoder((unsigned char *)gif->data->data(), gif->width, gif->height, gif->buf_type);
+        GifEncoder encoder((unsigned char *)enc_req->buf_data, gif->width, gif->height, gif->buf_type);
         if (gif->transparency_color.color_present) {
             encoder.set_transparency_color(gif->transparency_color);
         }
@@ -165,7 +174,7 @@ Gif::EIO_GifEncode(eio_req *req)
     return 0;
 }
 
-int 
+int
 Gif::EIO_GifEncodeAfter(eio_req *req)
 {
     HandleScope scope;
@@ -181,7 +190,7 @@ Gif::EIO_GifEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->gif_len);
-        memcpy(buf->data(), enc_req->gif, enc_req->gif_len);
+        memcpy(BufferData(buf), enc_req->gif, enc_req->gif_len);
         argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
@@ -226,6 +235,12 @@ Gif::GifEncodeAsync(const Arguments &args)
     enc_req->gif = NULL;
     enc_req->gif_len = 0;
     enc_req->error = NULL;
+
+    // We need to pull out the buffer data before
+    // we go to the thread pool.
+    Local<Value> buf_val = gif->handle_->GetHiddenValue(String::New("buffer"));
+
+    enc_req->buf_data = BufferData(buf_val->ToObject());
 
     eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
 
