@@ -11,7 +11,7 @@ class Gif : public node::ObjectWrap {
     buffer_type buf_type;
     Color transparency_color;
 
-    static int EIO_GifEncode(eio_req *req);
+    static void EIO_GifEncode(eio_req *req);
     static int EIO_GifEncodeAfter(eio_req *req);
 
 public:
