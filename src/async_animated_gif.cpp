@@ -32,7 +32,7 @@ AsyncAnimatedGif::AsyncAnimatedGif(int wwidth, int hheight, buffer_type bbuf_typ
     transparency_color(0xFF, 0xFF, 0xFE),
     push_id(0), fragment_id(0) {}
 
-int
+void
 AsyncAnimatedGif::EIO_Push(eio_req *req)
 {
     push_request *push_req = (push_request *)req->data;
@@ -43,7 +43,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
             // async with no callback
             fprintf(stderr, "Could not mkdir(%s) in AsyncAnimatedGif::EIO_Push.\n",
                 push_req->tmp_dir);
-            return 0;
+            return;
         }
     }
 
@@ -54,7 +54,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
         if (mkdir(fragment_dir, 0775) == -1) {
             fprintf(stderr, "Could not mkdir(%s) in AsyncAnimatedGif::EIO_Push.\n",
                 fragment_dir);
-            return 0;
+            return;
         }
     }
 
@@ -67,7 +67,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
     if (!out) {
         fprintf(stderr, "Failed to open %s in AsyncAnimatedGif::EIO_Push.\n",
             filename);
-        return 0;
+        return;
     }
     int written = fwrite(push_req->data, sizeof(unsigned char), push_req->data_size, out);
     if (written != push_req->data_size) {
@@ -75,7 +75,7 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
             filename, written, push_req->data_size);
     }
 
-    return 0;
+    return;
 }
 
 int
@@ -313,7 +313,7 @@ AsyncAnimatedGif::rect_dims(const char *fragment_name)
     return Rect(x, y, w, h);
 }
 
-int
+void
 AsyncAnimatedGif::EIO_Encode(eio_req *req)
 {
     async_encode_request *enc_req = (async_encode_request *)req->data;
@@ -331,7 +331,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
             snprintf(error, 600, "Error in AsyncAnimatedGif::EIO_Encode %s is not a dir.",
                 fragment_path);
             enc_req->error = strdup(error);
-            return 0;
+            return;
         }
 
         char **fragments = find_files(fragment_path);
@@ -344,7 +344,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
         LOKI_ON_BLOCK_EXIT(free, frame);
         if (!frame) {
             enc_req->error = strdup("malloc failed in AsyncAnimatedGif::EIO_Encode.");
-            return 0;
+            return;
         }
 
         for (int i = 0; i < nfragments; i++) {
@@ -356,7 +356,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
                 snprintf(error, 600, "Failed opening %s in AsyncAnimatedGif::EIO_Encode.",
                     fragment_path);
                 enc_req->error = strdup(error);
-                return 0;
+                return;
             }
             LOKI_ON_BLOCK_EXIT(fclose, in);
             int size = file_size(fragment_path);
@@ -367,7 +367,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
                 char error[600];
                 snprintf(error, 600, "Error - should have read %d but read only %d from %s in AsyncAnimatedGif::EIO_Encode", size, read, fragment_path);
                 enc_req->error = strdup(error);
-                return 0;
+                return;
             }
             Rect dims = rect_dims(fragments[i]);
             push_fragment(frame, gif->width, gif->height, gif->buf_type,
@@ -377,7 +377,7 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
     }
     encoder.finish();
 
-    return 0;
+    return;
 }
 
 int

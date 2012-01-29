@@ -250,7 +250,7 @@ DynamicGifStack::GifEncodeSync(const Arguments &args)
     return scope.Close(gif_stack->GifEncodeSync());
 }
 
-int
+void
 DynamicGifStack::EIO_GifEncode(eio_req *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
@@ -266,7 +266,7 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
     unsigned char *data = (unsigned char*)malloc(sizeof(*data)*gif->width*gif->height*3);
     if (!data) {
         enc_req->error = strdup("malloc failed in DynamicGifStack::EIO_GifEncode.");
-        return 0;
+        return;
     }
 
     unsigned char *datap = data;
@@ -290,7 +290,7 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
         enc_req->gif = (char *)malloc(sizeof(*enc_req->gif)*enc_req->gif_len);
         if (!enc_req->gif) {
             enc_req->error = strdup("malloc in DynamicGifStack::EIO_GifEncode failed.");
-            return 0;
+            return;
         }
         else {
             memcpy(enc_req->gif, encoder.get_gif(), enc_req->gif_len);
@@ -300,7 +300,7 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
         enc_req->error = strdup(err);
     }
 
-    return 0;
+    return;
 }
 
 int

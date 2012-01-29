@@ -145,7 +145,7 @@ Gif::SetTransparencyColor(const Arguments &args)
     return Undefined();
 }
 
-int
+void
 Gif::EIO_GifEncode(eio_req *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
@@ -161,7 +161,7 @@ Gif::EIO_GifEncode(eio_req *req)
         enc_req->gif = (char *)malloc(sizeof(*enc_req->gif)*enc_req->gif_len);
         if (!enc_req->gif) {
             enc_req->error = strdup("malloc in Gif::EIO_GifEncode failed.");
-            return 0;
+            return;
         }
         else {
             memcpy(enc_req->gif, encoder.get_gif(), enc_req->gif_len);
@@ -171,7 +171,7 @@ Gif::EIO_GifEncode(eio_req *req)
         enc_req->error = strdup(err);
     }
 
-    return 0;
+    return;
 }
 
 int
