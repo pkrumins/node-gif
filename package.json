@@ -15,8 +15,8 @@
        "email": "peteris.krumins@gmail.com",
        "web": "http://www.catonmat.net",
        "twitter": "pkrumins"
-   } 
-   "licens": "MIT",
+   },
+   "license": "MIT",
    "repository": {
        "type": "git",
        "url": "http://github.com/pkrumins/node-gif.git" 
