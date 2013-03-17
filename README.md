@@ -1,11 +1,6 @@
 This is a node.js module, writen in C++, that uses giflib to produce GIF images
 from RGB, BGR, RGBA or BGRA buffers.
 
-It was written by Peteris Krumins (peter@catonmat.net).
-His blog is at http://www.catonmat.net  --  good coders code, great reuse.
-
-------------------------------------------------------------------------------
-
 This module exports `Gif`, `DynamicGifStack`, `AnimatedGif` and `AsyncAnimatedGif`
 objects.
 
@@ -184,24 +179,4 @@ Here they are:
     http://github.com/pkrumins/node-png
     http://github.com/pkrumins/node-jpeg
 
-
-Why was this module written?
-----------------------------
-
-This module was written for my and James Halliday startup StackVM. StackVM puts
-virtual machines on the web!
-
-More info about our startup at: http://www.stackvm.com
-Our startup is open source: http://github.com/pkrumins/stackvm
-
-James Halliday is at http://substack.net and http://github.com/substack
-
-------------------------------------------------------------------------------
-
-Have fun with this module!
-
-
-Sincerely,
-Peteris Krumins (@pkrumins at Twitter)
-http://www.catonmat.net
 
