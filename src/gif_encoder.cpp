@@ -147,8 +147,8 @@ GifEncoder::encode()
     RGBator rgb(data, width, height, buf_type);
 
     int color_map_size = 256;
-    ColorMapObject *output_color_map = MakeMapObject(256, ext_web_safe_palette);
-    LOKI_ON_BLOCK_EXIT(FreeMapObject, output_color_map);
+    ColorMapObject *output_color_map = GifMakeMapObject(256, ext_web_safe_palette);
+    LOKI_ON_BLOCK_EXIT(GifFreeMapObject, output_color_map);
     if (!output_color_map)
         throw "MakeMapObject in GifEncoder::encode failed";
 
@@ -169,12 +169,12 @@ GifEncoder::encode()
     }
     */
 
-    GifFileType *gif_file = EGifOpen(&gif, gif_writer);
+    int nError;
+    GifFileType *gif_file = EGifOpen(&gif, gif_writer, &nError);
     LOKI_ON_BLOCK_EXIT(EGifCloseFile, gif_file);
     if (!gif_file)
         throw "EGifOpen in GifEncoder::encode failed";
 
-    EGifSetGifVersion("89a");
     if (EGifPutScreenDesc(gif_file, width, height,
         color_map_size, 0, output_color_map) == GIF_ERROR)
     {
@@ -245,7 +245,7 @@ AnimatedGifEncoder::end_encoding() {
     free(gif_buf);
     gif_buf = NULL;
     if (output_color_map) {
-        FreeMapObject(output_color_map);
+        GifFreeMapObject(output_color_map);
         output_color_map = NULL;
     }
     if (gif_file) {
@@ -259,15 +259,17 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 {
     if (!gif_file) {
         if (file_name.empty()) { // memory writer
-            gif_file = EGifOpen(&gif, gif_writer); 
+            int nError;
+            gif_file = EGifOpen(&gif, gif_writer, &nError);
             if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
         }
         else {
-            gif_file = EGifOpenFileName(file_name.c_str(), FALSE);
+            int nError;
+            gif_file = EGifOpenFileName(file_name.c_str(), FALSE, &nError);
             if (!gif_file) throw "EGifOpenFileName in AnimatedGifEncoder::new_frame failed";
         }
 
-        output_color_map = MakeMapObject(color_map_size, ext_web_safe_palette);
+        output_color_map = GifMakeMapObject(color_map_size, ext_web_safe_palette);
         if (!output_color_map) throw "MakeMapObject in AnimatedGifEncoder::new_frame failed";
 
         gif_buf = (GifByteType *)malloc(sizeof(GifByteType)*width*height);
@@ -289,16 +291,15 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
     */
 
     if (!headers_set) {
-        EGifSetGifVersion("89a");
         if (EGifPutScreenDesc(gif_file, width, height,
             color_map_size, 0, output_color_map) == GIF_ERROR)
         {
             throw "EGifPutScreenDesc in AnimatedGifEncoder::new_frame failed";
         }
         char netscape_extension[] = "NETSCAPE2.0";
-        EGifPutExtensionFirst(gif_file, APPLICATION_EXT_FUNC_CODE, 11, netscape_extension);
+        EGifPutExtension(gif_file, APPLICATION_EXT_FUNC_CODE, 11, netscape_extension);
         char animation_extension[] = { 1, 1, 0 }; // repeat one time
-        EGifPutExtensionLast(gif_file, APPLICATION_EXT_FUNC_CODE, 3, animation_extension);
+        EGifPutExtension(gif_file, APPLICATION_EXT_FUNC_CODE, 3, animation_extension);
         headers_set = true;
     }
 
