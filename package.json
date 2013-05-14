@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/pkrumins/node-gif.git"
+    "url": "https://github.com/pkrumins/node-gif.git"
   },
   "directories": {
     "tests": "tests"
