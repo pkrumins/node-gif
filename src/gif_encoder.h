@@ -48,6 +48,8 @@ class AnimatedGifEncoder {
     Color transparency_color;
 
     std::string file_name;
+    OutputFunc write_func;
+    void *write_user_data;
 
     void end_encoding();
 public:
@@ -61,6 +63,7 @@ public:
     void set_transparency_color(const Color &c);
 
     void set_output_file(const char *ffile_name);
+    void set_output_func(OutputFunc func, void* user_data);
 
     const unsigned char *get_gif() const;
     const int get_gif_len() const;
