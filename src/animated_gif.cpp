@@ -248,6 +248,8 @@ AnimatedGif::SetOutputFile(const Arguments &args)
 int
 stream_writer(GifFileType *gif_file, const GifByteType *data, int size)
 {
+    HandleScope scope;
+
     AnimatedGif *gif = (AnimatedGif *)gif_file->UserData;
     Buffer *retbuf = Buffer::New(size);
     memcpy(BufferData(retbuf), data, size);
