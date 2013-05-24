@@ -5,6 +5,8 @@
 #include "animated_gif.h"
 #include "buffer_compat.h"
 
+#include <iostream>
+
 using namespace v8;
 using namespace node;
 
@@ -20,6 +22,7 @@ AnimatedGif::Initialize(Handle<Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "getGif", GetGif);
     NODE_SET_PROTOTYPE_METHOD(t, "end", End);
     NODE_SET_PROTOTYPE_METHOD(t, "setOutputFile", SetOutputFile);
+    NODE_SET_PROTOTYPE_METHOD(t, "setOutputCallback", SetOutputCallback);
     target->Set(String::NewSymbol("AnimatedGif"), t->GetFunction());
 }
 
@@ -242,3 +245,36 @@ AnimatedGif::SetOutputFile(const Arguments &args)
     return Undefined();
 }
 
+int
+stream_writer(GifFileType *gif_file, const GifByteType *data, int size)
+{
+    AnimatedGif *gif = (AnimatedGif *)gif_file->UserData;
+    Buffer *retbuf = Buffer::New(size);
+    memcpy(BufferData(retbuf), data, size);
+    Handle<Value> argv[1] = {
+      retbuf->handle_
+    };
+    //Local<Value> callback_v = gif->Wrap()->Get(String::New("ondata"));
+    //assert(callback_v->IsFunction());
+    //Local<Function> callback = Local<Function>::Cast(callback_v);
+    gif->ondata->Call(Context::GetCurrent()->Global(), 1, argv);
+    return size;
+}
+
+Handle<Value>
+AnimatedGif::SetOutputCallback(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - path to output file.");
+
+    if (!args[0]->IsFunction())
+        return VException("First argument must be string.");
+
+    Local<Function> callback = Local<Function>::Cast(args[0]);
+    AnimatedGif *gif = ObjectWrap::Unwrap<AnimatedGif>(args.This());
+    gif->ondata = Persistent<Function>::New(callback);
+    gif->gif_encoder.set_output_func(stream_writer, (void*)gif);
+    return Undefined();
+}

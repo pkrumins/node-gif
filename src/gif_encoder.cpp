@@ -235,7 +235,7 @@ GifEncoder::get_gif_len() const
 // Animated Gif Encoder
 AnimatedGifEncoder::AnimatedGifEncoder(int wwidth, int hheight, buffer_type bbuf_type) :
     width(wwidth), height(hheight), buf_type(bbuf_type),
-    gif_buf(NULL), output_color_map(NULL), gif_file(NULL), color_map_size(256),
+    gif_buf(NULL), output_color_map(NULL), gif_file(NULL), color_map_size(256), write_func(0), write_user_data(0),
     headers_set(false) {}
 
 AnimatedGifEncoder::~AnimatedGifEncoder() { end_encoding(); }
@@ -258,17 +258,19 @@ void
 AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
 {
     if (!gif_file) {
-        if (file_name.empty()) { // memory writer
+       if (write_func != NULL) {
+            int nError;
+            gif_file = EGifOpen(write_user_data, write_func, &nError);
+            if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
+        } else if (file_name.empty()) { // memory writer
             int nError;
             gif_file = EGifOpen(&gif, gif_writer, &nError);
             if (!gif_file) throw "EGifOpen in AnimatedGifEncoder::new_frame failed";
-        }
-        else {
+        } else {
             int nError;
             gif_file = EGifOpenFileName(file_name.c_str(), FALSE, &nError);
             if (!gif_file) throw "EGifOpenFileName in AnimatedGifEncoder::new_frame failed";
         }
-
         output_color_map = GifMakeMapObject(color_map_size, ext_web_safe_palette);
         if (!output_color_map) throw "MakeMapObject in AnimatedGifEncoder::new_frame failed";
 
@@ -323,7 +325,7 @@ AnimatedGifEncoder::new_frame(unsigned char *data, int delay)
     if (EGifPutImageDesc(gif_file, 0, 0, width, height, FALSE, NULL) == GIF_ERROR) {
         throw "EGifPutImageDesc in AnimatedGifEncoder::new_frame failed";
     }
-  
+
     GifByteType *gif_bufp = gif_buf;
     for (int i = 0; i < height; i++) {
         if (EGifPutLine(gif_file, gif_bufp, width) == GIF_ERROR) {
@@ -372,3 +374,9 @@ AnimatedGifEncoder::set_output_file(const char *ffile_name)
     file_name = ffile_name;
 }
 
+void
+AnimatedGifEncoder::set_output_func(OutputFunc func, void *user_data)
+{
+   write_func = func;
+   write_user_data = user_data;
+}

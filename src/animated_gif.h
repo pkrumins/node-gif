@@ -16,6 +16,9 @@ class AnimatedGif : public node::ObjectWrap {
     Color transparency_color;
 
 public:
+
+    v8::Persistent<v8::Function> ondata;
+
     static void Initialize(v8::Handle<v8::Object> target);
 
     AnimatedGif(int wwidth, int hheight, buffer_type bbuf_type);
@@ -28,6 +31,7 @@ public:
     static v8::Handle<v8::Value> End(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetGif(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetOutputFile(const v8::Arguments &args);
+    static v8::Handle<v8::Value> SetOutputCallback(const v8::Arguments &args);
 };
 
 #endif
