@@ -1,6 +1,6 @@
 var fs  = require('fs');
 var sys = require('sys');
-var Gif = require('gif').Gif;
+var Gif = require('..').Gif;
 var Buffer = require('buffer').Buffer;
 
 var terminal = fs.readFileSync('./terminal.rgb');
