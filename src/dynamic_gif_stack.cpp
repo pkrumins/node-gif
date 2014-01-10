@@ -251,7 +251,7 @@ DynamicGifStack::GifEncodeSync(const Arguments &args)
 }
 
 void
-DynamicGifStack::EIO_GifEncode(eio_req *req)
+DynamicGifStack::EIO_GifEncode(uv_work_t *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
     DynamicGifStack *gif = (DynamicGifStack *)enc_req->gif_obj;
@@ -303,12 +303,13 @@ DynamicGifStack::EIO_GifEncode(eio_req *req)
     return;
 }
 
-int
-DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
+void
+DynamicGifStack::EIO_GifEncodeAfter(uv_work_t *req, int status)
 {
     HandleScope scope;
 
-    ev_unref(EV_DEFAULT_UC);
+    //ev_unref(EV_DEFAULT_UC);
+    
     encode_request *enc_req = (encode_request *)req->data;
     DynamicGifStack *gif = (DynamicGifStack *)enc_req->gif_obj;
 
@@ -341,7 +342,7 @@ DynamicGifStack::EIO_GifEncodeAfter(eio_req *req)
     gif->Unref();
     free(enc_req);
 
-    return 0;
+    //return 0;
 }
 
 Handle<Value>
@@ -368,9 +369,12 @@ DynamicGifStack::GifEncodeAsync(const Arguments &args)
     enc_req->gif_len = 0;
     enc_req->error = NULL;
 
-    eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+    uv_work_t * req = new uv_work_t;
+    req->data = enc_req;
 
-    ev_ref(EV_DEFAULT_UC);
+    //eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+    uv_queue_work(uv_default_loop(), req, &EIO_GifEncode, &EIO_GifEncodeAfter);
+    //ev_ref(EV_DEFAULT_UC);
     gif->Ref();
 
     return Undefined();

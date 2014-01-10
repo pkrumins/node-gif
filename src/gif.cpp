@@ -146,7 +146,7 @@ Gif::SetTransparencyColor(const Arguments &args)
 }
 
 void
-Gif::EIO_GifEncode(eio_req *req)
+Gif::EIO_GifEncode(uv_work_t *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
     Gif *gif = (Gif *)enc_req->gif_obj;
@@ -174,12 +174,12 @@ Gif::EIO_GifEncode(eio_req *req)
     return;
 }
 
-int
-Gif::EIO_GifEncodeAfter(eio_req *req)
+void
+Gif::EIO_GifEncodeAfter(uv_work_t *req, int status)
 {
     HandleScope scope;
 
-    ev_unref(EV_DEFAULT_UC);
+    //ev_unref(EV_DEFAULT_UC);
     encode_request *enc_req = (encode_request *)req->data;
 
     Handle<Value> argv[2];
@@ -209,7 +209,7 @@ Gif::EIO_GifEncodeAfter(eio_req *req)
     ((Gif *)enc_req->gif_obj)->Unref();
     free(enc_req);
 
-    return 0;
+    //return 0;
 }
 
 Handle<Value>
@@ -242,9 +242,16 @@ Gif::GifEncodeAsync(const Arguments &args)
 
     enc_req->buf_data = BufferData(buf_val->ToObject());
 
-    eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+    uv_work_t *req = new uv_work_t;
 
-    ev_ref(EV_DEFAULT_UC);
+    req->data = enc_req;
+    
+    //eio_custom(EIO_GifEncode, EIO_PRI_DEFAULT, EIO_GifEncodeAfter, enc_req);
+
+    uv_queue_work(uv_default_loop(), req, EIO_GifEncode, EIO_GifEncodeAfter);
+
+    //ev_ref(EV_DEFAULT_UC);
+    
     gif->Ref();
 
     return Undefined();

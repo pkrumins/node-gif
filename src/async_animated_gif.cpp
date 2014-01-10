@@ -33,7 +33,7 @@ AsyncAnimatedGif::AsyncAnimatedGif(int wwidth, int hheight, buffer_type bbuf_typ
     push_id(0), fragment_id(0) {}
 
 void
-AsyncAnimatedGif::EIO_Push(eio_req *req)
+AsyncAnimatedGif::EIO_Push(uv_work_t *req)
 {
     push_request *push_req = (push_request *)req->data;
 
@@ -78,16 +78,15 @@ AsyncAnimatedGif::EIO_Push(eio_req *req)
     return;
 }
 
-int
-AsyncAnimatedGif::EIO_PushAfter(eio_req *req)
+void
+AsyncAnimatedGif::EIO_PushAfter(uv_work_t *req, int status)
 {
-    ev_unref(EV_DEFAULT_UC);
+    //ev_unref(EV_DEFAULT_UC);
 
     push_request *push_req = (push_request *)req->data;
     free(push_req->data);
     free(push_req);
 
-    return 0;
 }
 
 Handle<Value>
@@ -100,6 +99,8 @@ AsyncAnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
 
     if (output_file.empty())
         throw "Output file is not set. Use .setOutputFile to set it before pushing.";
+
+    uv_work_t * req = new uv_work_t;
 
     push_request *push_req = (push_request *)malloc(sizeof(*push_req));
     if (!push_req)
@@ -121,8 +122,11 @@ AsyncAnimatedGif::Push(unsigned char *data_buf, int x, int y, int w, int h)
     push_req->w = w;
     push_req->h = h;
 
-    eio_custom(EIO_Push, EIO_PRI_DEFAULT, EIO_PushAfter, push_req);
-    ev_ref(EV_DEFAULT_UC);
+    req->data = push_req;
+
+    //eio_custom(EIO_Push, EIO_PRI_DEFAULT, EIO_PushAfter, push_req);
+    uv_queue_work(uv_default_loop(), req, &EIO_Push, &EIO_PushAfter);
+    //ev_ref(EV_DEFAULT_UC);
 
     return Undefined();
 }
@@ -314,7 +318,7 @@ AsyncAnimatedGif::rect_dims(const char *fragment_name)
 }
 
 void
-AsyncAnimatedGif::EIO_Encode(eio_req *req)
+AsyncAnimatedGif::EIO_Encode(uv_work_t *req)
 {
     async_encode_request *enc_req = (async_encode_request *)req->data;
     AsyncAnimatedGif *gif = (AsyncAnimatedGif *)enc_req->gif_obj;
@@ -380,12 +384,12 @@ AsyncAnimatedGif::EIO_Encode(eio_req *req)
     return;
 }
 
-int
-AsyncAnimatedGif::EIO_EncodeAfter(eio_req *req)
+void
+AsyncAnimatedGif::EIO_EncodeAfter(uv_work_t *req, int status)
 {
     HandleScope scope;
 
-    ev_unref(EV_DEFAULT_UC);
+    //ev_unref(EV_DEFAULT_UC);
     async_encode_request *enc_req = (async_encode_request *)req->data;
 
     Handle<Value> argv[2];
@@ -411,7 +415,7 @@ AsyncAnimatedGif::EIO_EncodeAfter(eio_req *req)
     enc_req->gif_obj->Unref();
     free(enc_req);
 
-    return 0;
+    //return 0;
 }
 
 Handle<Value>
@@ -427,8 +431,12 @@ AsyncAnimatedGif::Encode(const Arguments &args)
 
     Local<Function> callback = Local<Function>::Cast(args[0]);
     AsyncAnimatedGif *gif = ObjectWrap::Unwrap<AsyncAnimatedGif>(args.This());
+    
+    uv_work_t *req = new uv_work_t;
 
     async_encode_request *enc_req = (async_encode_request *)malloc(sizeof(*enc_req));
+
+
     if (!enc_req)
         return VException("malloc in AsyncAnimatedGif::Encode failed.");
 
@@ -436,9 +444,13 @@ AsyncAnimatedGif::Encode(const Arguments &args)
     enc_req->gif_obj = gif;
     enc_req->error = NULL;
 
-    eio_custom(EIO_Encode, EIO_PRI_DEFAULT, EIO_EncodeAfter, enc_req);
+    req->data = enc_req;
 
-    ev_ref(EV_DEFAULT_UC);
+    //eio_custom(EIO_Encode, EIO_PRI_DEFAULT, EIO_EncodeAfter, enc_req);
+
+    uv_queue_work(uv_default_loop(), req, &EIO_Encode, &EIO_EncodeAfter);
+    //ev_ref(EV_DEFAULT_UC);
+    
     gif->Ref();
 
     return Undefined();

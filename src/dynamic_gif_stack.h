@@ -39,8 +39,8 @@ class DynamicGifStack : public node::ObjectWrap {
 
     std::pair<Point, Point> optimal_dimension();
 
-    static void EIO_GifEncode(eio_req *req);
-    static int EIO_GifEncodeAfter(eio_req *req);
+    static void EIO_GifEncode(uv_work_t *req);
+    static void EIO_GifEncodeAfter(uv_work_t *req, int status);
     void construct_gif_data(unsigned char *data, Point &top);
 
 public:

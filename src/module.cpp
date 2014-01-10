@@ -19,3 +19,9 @@ init(Handle<Object> target)
     AsyncAnimatedGif::Initialize(target);
 }
 
+
+void RegisterModule(Handle<Object> target) {
+    init(target);
+}
+
+NODE_MODULE(gif, RegisterModule);
