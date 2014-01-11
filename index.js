@@ -1,1 +1,1 @@
-module.exports = require('bindings')('gif');
+module.exports = require('./build/Release/gif.node'); 

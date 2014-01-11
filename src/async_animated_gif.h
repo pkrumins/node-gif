@@ -35,11 +35,11 @@ class AsyncAnimatedGif : public node::ObjectWrap {
     unsigned int push_id, fragment_id;
     std::string tmp_dir, output_file;
 
-    static void EIO_Push(eio_req *req);
-    static int EIO_PushAfter(eio_req *req);
+    static void EIO_Push(uv_work_t *req);
+    static void EIO_PushAfter(uv_work_t *req, int status);
 
-    static void EIO_Encode(eio_req *req);
-    static int EIO_EncodeAfter(eio_req *req);
+    static void EIO_Encode(uv_work_t *req);
+    static void EIO_EncodeAfter(uv_work_t *req, int status);
 
     static unsigned char *init_frame(int width, int height, Color &transparency_color);
     static void push_fragment(unsigned char *frame, int width, int height, buffer_type buf_type,

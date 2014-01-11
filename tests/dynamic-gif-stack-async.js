@@ -1,4 +1,4 @@
-var GifLib = require('gif');
+var GifLib = require('../');
 var fs = require('fs');
 var sys = require('sys');
 var Buffer = require('buffer').Buffer;
