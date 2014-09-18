@@ -160,7 +160,7 @@ To compile the module, make sure you have giflib [1] and run:
 This will produce gif.node object file. Don't forget to point NODE_PATH to
 node-gif directory to use it.
 
-Another way to get it installed is to use node.js packaga manager npm [2]. To
+Another way to get it installed is to use node.js package manager npm [2]. To
 get node-gif installed via npm, run:
 
     npm install gif
